@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MTG: Enciclopedia Suprema de Battle Box</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- Firebase SDK (Compat) -->
+    <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore-compat.js"></script>
+</head>
+<body>
+    <div class="background-effects">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+
+    <!-- UI Flotante para Administrar la Battle Box y Archivo -->
+    <button id="btn-open-battlebox" class="floating-btn">
+        <span class="icon">📦</span> 
+        Ver Battle Box (<span id="bb-count">0</span>)
+    </button>
+    <button id="btn-open-archive" class="floating-btn" style="top: 5.5rem; background: rgba(16, 185, 129, 0.2); border-color: #10b981; font-size: 0.9rem; padding: 0.8rem 1.2rem;">
+        <span class="icon">📚</span> 
+        Archivo Antiguo
+    </button>
+    <button id="btn-open-community" class="floating-btn" style="top: 9rem; background: rgba(59, 130, 246, 0.2); border-color: #3b82f6; font-size: 0.9rem; padding: 0.8rem 1.2rem;">
+        <span class="icon">🌐</span> 
+        Bóveda Comunidad
+    </button>
+
+    <!-- PANTALLA CERO: Selección de Formato y Portal de Entrada Épico -->
+    <main id="intro-screen" class="intro-overlay">
+        
+        <!-- Canvas para renderizar sistema de partículas (Humo y Chispas mágicas) -->
+        <canvas id="epic-canvas"></canvas>
+        <div class="intro-content">
+            <h1 class="intro-title" id="magic-title">M A G I C</h1>
+            <p class="intro-subtitle">Elige el Campo de Batalla</p>
+            <div class="format-choices">
+                <!-- Monolito: Cocina Clásica -->
+                <button class="btn-format btn-blue" id="btn-format-standard" data-format="standard">
+                    <!-- Layer 2: Asset PNG Transparente puro -->
+                    <img src="monolito_azul.png" class="monolith-asset" alt="Monolito Cocina Clásica">
+                </button>
+
+                <!-- Monolito: Commander -->
+                <button class="btn-format btn-orange" id="btn-format-commander" data-format="commander">
+                    <!-- Layer 2: Asset PNG Transparente puro -->
+                    <img src="monolito_naranja.png" class="monolith-asset" alt="Monolito Commander">
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- PANTALLA PRINCIPAL: El Salón Central -->
+    <main id="home-screen" class="container view">
+        <header class="hero">
+            <h1>LA BIBLIOTECA DEL ORÁCULO</h1>
+            <h2>La Forja Suprema de las Leyendas</h2>
+            
+            <div class="golden-rule">
+                <h3>⚜️ LA REGLA DEL EQUILIBRIO PERFECTO ⚜️</h3>
+                <p>Nuestra Battle Box no tiene límite de tamaño, está viva y en constante expansión. Pero para que las partidas sean épicas, creceremos en <strong>Bloques Equilibrados</strong> (ej: tandas de 5 o 10 mazos). La fórmula base para cada tanda siempre buscará la asimetría perfecta: <strong>1 Aggro, 1 Control, 1 Midrange, 1 Tempo y 1 Combo</strong>. <br><br>🚨 <strong>Regla Inquebrantable:</strong> Da igual cuántos mazos hagamos hoy o el año que viene, cada vez que elijas algo, tiene que ser un "Sub-arquetipo" distinto. <em>¡NUNCA repetimos una variante que ya exista dentro de la Battle Box!</em></p>
+            </div>
+            
+            <p>Adéntrate en las salas de cada Arquetipo abajo. Encontrarás la Base de Datos completa con todos los mazos catalogados en la historia de Magic. Selecciona, configura y envía a tu Battle Box.</p>
+        </header>
+
+        <section class="archetypes-nav" id="archetypes-nav">
+            <!-- Botones gigantes renderizados por JS según el formato elegido -->
+        </section>
+        
+        <footer>
+            <p>Infinitas posibilidades. Una Battle Box en constante expansión. ¡Que fluyan los proxys!</p>
+        </footer>
+    </main>
+
+    <!-- PANTALLA SECUNDARIA: Sala Detalle del Arquetipo (Inyectado por JS) -->
+    <main id="detail-screen" class="container view">
+        <!-- El contenido detallado se renderizará aquí vía JavaScript -->
+    </main>
+
+    <!-- PANTALLA TERCERA: La Battle Box y Prompts -->
+    <main id="battlebox-screen" class="container view">
+        <div class="screen-header" style="border-color: var(--color-gold); box-shadow: 0 0 40px rgba(245, 158, 11, 0.1);">
+            <button class="btn-back" id="btn-back-from-bb">
+                <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                Regresar al Salón
+            </button>
+            <div class="detail-title" style="color: var(--color-gold);">
+                <span id="bb-title-trigger" title="" style="cursor: default;">📦</span> <span>TU BATTLE BOX</span>
+            </div>
+            <div style="font-size: 1.2rem; margin-bottom: 0.5rem; letter-spacing: 2px;">Gestor Inmortal de Mazos</div>
+            <div class="detail-quote" style="color: var(--color-gold);">"Aquí residen las almas de nuestras batallas futuras."</div>
+        </div>
+
+        <div id="bb-list" class="bb-list">
+            <!-- Mazos inyectados por JS -->
+        </div>
+
+        <div class="master-actions-container" style="margin-top: 3rem; text-align: center; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 2rem;">
+            <!-- Opción por defecto (Estándar Actual) -->
+            <button id="btn-master-prompt" class="btn-save-bb" style="background: rgba(168, 85, 247, 0.4); border: 1px solid var(--color-purple); color: white; display: none; margin-bottom: 0.5rem;">🪄 1. Copiar Prompt MAESTRO</button>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 2rem; font-style: italic;">Modo Clásico: Copia este texto maestro y pégalo en ChatGPT/Claude para obtener tus listas equilibradas.</p>
+
+            <!-- Sección Opcional Experimental IA -->
+            <div id="ai-generator-panel" class="ai-panel" style="background: rgba(0,0,0,0.4); padding: 1.5rem; border-radius: 12px; border: 1px dashed var(--color-gold); max-width: 600px; margin: 0 auto; display: none;">
+                <h4 style="color: var(--color-gold); font-family: 'Cinzel'; margin-bottom: 0.5rem;">🔮 Modo Experimental (Generar Aquí)</h4>
+                
+                <div style="background: rgba(14, 165, 233, 0.1); border: 1px solid rgba(14, 165, 233, 0.3); padding: 0.8rem 1.2rem; border-radius: 6px; margin-bottom: 1.2rem; font-size: 0.85rem; color: #bae6fd; text-align: left; line-height: 1.4;">
+                    <div style="font-weight: bold; margin-bottom: 0.4rem; color: #38bdf8;">ℹ️ ¿Qué es esto y cómo consigo la Llave (API Key)?</div>
+                    Para que la web sea inteligente sin colapsar, cada Planeswalker necesita conectar su propia "llave gratuita" de Inteligencia Artificial solo la primera vez que entra:<br>
+                    <ol style="margin-top: 0.4rem; padding-left: 1.2rem; margin-bottom: 0;">
+                        <li>Haz click en <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color: #7dd3fc; font-weight: bold; text-decoration: underline;">Google AI Studio (AQUÍ)</a> e inicia sesión con tu Gmail.</li>
+                        <li>Haz click en el gran botón azul que dice <strong>"Create API key"</strong>.</li>
+                        <li>Copia esa "contraseña secreta", vuelve a esta web y pégala en la cajita de aquí abajo.</li>
+                        <li>¡Súper Importante! Pulsa el botón de recargar <strong style="color:white; display:inline-flex; align-items:center; justify-content:center; background:#334155; padding: 0.1rem 0.3rem; border-radius:3px; font-size:0.9rem;">🔄</strong> para que se carguen los cerebros de Google.</li>
+                        <li>En el menú desplegable que se llena, selecciona obligatoriamente <strong>Gemini 3.1 Flash Lite Preview</strong> para asegurar el mejor formato.</li>
+                    </ol>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 0.8rem; justify-content: center; align-items: center; margin-bottom: 1rem;">
+                    <div style="display: flex; gap: 0.5rem; width: 100%; align-items: stretch; justify-content: center;">
+                        <select id="ai-provider" style="padding: 0.6rem; border-radius: 6px; border: 1px solid var(--color-gold); background: #1e293b; color: white; cursor: pointer;">
+                            <option value="gemini">Google Gemini</option>
+                            <option value="openai">OpenAI</option>
+                            <option value="groq">Groq</option>
+                            <option value="openrouter">OpenRouter</option>
+                        </select>
+                        <select id="api-model-select" style="padding: 0.6rem; border-radius: 6px; border: 1px solid var(--color-gold); background: #1e293b; color: white; width: 220px; cursor: pointer;" title="Elige el modelo específico de la IA">
+                            <option value="">Pulsa Cargar...</option>
+                        </select>
+                        <div style="display: flex; flex-grow: 1; max-width: 400px; gap: 0.3rem;">
+                            <input type="password" id="api-key-input" placeholder="Pega tu API Key..." style="padding: 0.6rem; border-radius: 6px; border: 1px solid var(--color-gold); background: #1e293b; color: white; flex-grow: 1;">
+                            <button id="btn-load-models" title="Descargar lista de modelos de tu cuenta" style="background: #334155; border: 1px solid var(--color-gold); color: white; padding: 0.6rem; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; min-width: 45px;">
+                                🔄
+                            </button>
+                        </div>
+                    </div>
+                    <button id="btn-ai-generate" style="background: var(--color-gold); border: none; padding: 0.6rem 2rem; border-radius: 6px; font-weight: bold; cursor: pointer; color: black; font-size: 1.1rem;">✨ Generar Ya</button>
+                </div>
+                <!-- Loading y Resultados -->
+                <div id="ai-status" style="display: none; font-style: italic; color: var(--color-gold); margin-bottom: 1rem;">Pensando listas matemáticamente... esto puede tardar unos 20-30 segundos... 🧙‍♂️</div>
+            </div>
+            
+            <!-- Contenedor de controles de vista (oculto hasta tener resultados) -->
+            <div id="ai-view-controls" style="display: none; justify-content: center; flex-wrap: wrap; gap: 1rem; margin-top: 2rem;">
+                <button id="btn-view-guide" class="btn-view-toggle active" style="padding: 0.5rem 1.2rem; border-radius: 20px; border: 1px solid var(--color-gold); background: rgba(245, 158, 11, 0.2); color: white; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem;">
+                    📖 Vista Guía
+                </button>
+                <button id="btn-view-list" class="btn-view-toggle" style="padding: 0.5rem 1.2rem; border-radius: 20px; border: 1px solid var(--color-gold); background: transparent; color: white; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem;">
+                    📋 Vista Individual
+                </button>
+                <div style="width: 1px; background: rgba(255,255,255,0.2); height: 30px; margin: 0 0.5rem;"></div>
+                <button id="btn-save-ai-decks" style="padding: 0.5rem 1.2rem; border-radius: 20px; border: 1px solid #10b981; background: rgba(16, 185, 129, 0.2); color: white; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem;" title="Guardar esto en el Archivo Histórico Local">
+                    💾 Archivar
+                </button>
+                <button id="btn-publish-community" style="padding: 0.5rem 1.2rem; border-radius: 20px; border: 1px solid #3b82f6; background: rgba(59, 130, 246, 0.2); color: white; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem;" title="Subir a la nube para que toda la comunidad pueda verlo">
+                    🌐 Publicar Online
+                </button>
+                <button id="btn-share-whatsapp" style="padding: 0.5rem 1.2rem; border-radius: 20px; border: 1px solid #25D366; background: rgba(37, 211, 102, 0.2); color: white; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem;" title="Enviar listas completas por WhatsApp">
+                    📲 WhatsApp
+                </button>
+                <button id="btn-share-telegram" style="padding: 0.5rem 1.2rem; border-radius: 20px; border: 1px solid #0088cc; background: rgba(0, 136, 204, 0.2); color: white; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem;" title="Enviar listas completas por Telegram">
+                    ✈️ Telegram
+                </button>
+            </div>
+            
+            <!-- Contenedor donde se imprimirán los mazos si usamos IA directamente -->
+            <div id="ai-results-container" style="margin-top: 2rem; text-align: left; display: none;">
+                <!-- Resultados Inyectados -->
+            </div>
+
+            <!-- Panel Secreto del Tribunal (Juicio Final DeepSeek) -->
+            <div id="judgment-panel" class="judgment-panel" style="display: none;">
+                <div class="judgment-header">
+                    <h4>⚖️ TRIBUNAL SUPERIOR: PROTOCOLO DE EQUILIBRIO</h4>
+                    <span class="deepseek-badge">Powered by DeepSeek R1</span>
+                </div>
+                <div class="judgment-content">
+                    <p>Las listas generadas están listas para ser auditadas. El Tribunal analizará la curva de maná, sinergias y detectará desbalances graves (deck Tier 1 dominante o rezagados injugables).</p>
+                    
+                    <div style="display: flex; gap: 0.5rem; width: 100%; margin-top: 1rem; flex-wrap: wrap;">
+                        <input type="password" id="judgment-api-key" placeholder="Pega tu API Key de OpenRouter..." title="Necesitas llave de OpenRouter" style="flex: 1; min-width: 200px;">
+                        <select id="judgment-model-select" style="background: #0f172a; border: 1px solid #0ea5e9; color: #38bdf8; padding: 0.8rem; border-radius: 4px; font-family: 'Courier New', monospace; cursor: pointer; flex: 1; min-width: 160px;">
+                            <option value="">↓ Carga modelos primero</option>
+                        </select>
+                        <button id="btn-load-judge-models" title="Cargar modelos gratuitos de tu cuenta OpenRouter" style="background: #0f172a; border: 1px solid #0ea5e9; color: #38bdf8; padding: 0.8rem; border-radius: 4px; cursor: pointer; font-size: 1rem; min-width: 45px;">🔄</button>
+                        <button id="btn-run-judgment" class="btn-judge">INICIAR JUICIO</button>
+                    </div>
+
+                    <div id="judgment-loader" class="judgment-loader" style="display: none;">
+                        <span class="glitch-text" data-text="Analizando variables de poder...">Analizando variables de poder...</span>
+                    </div>
+
+                    <div id="judgment-final-verdict" class="judgment-verdict" style="display: none;"></div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Modal flotante global para las Imágenes de las Cartas -->
+    <div id="mtg-tooltip" style="display: none;">
+        <img id="mtg-tooltip-img" src="" alt="Carta MTG">
+    </div>
+
+    <!-- PANTALLA CUARTA: El Archivo de Generaciones Pasadas -->
+    <main id="archive-screen" class="container view">
+        <div class="screen-header" style="border-color: #10b981; box-shadow: 0 0 40px rgba(16, 185, 129, 0.1);">
+            <button class="btn-back" id="btn-back-from-archive">
+                <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                Regresar al Salón
+            </button>
+            <div class="detail-title" style="color: #10b981;">
+                <span>📚</span> <span>LA BÓVEDA HISTÓRICA</span>
+            </div>
+            <div style="font-size: 1.2rem; margin-bottom: 0.5rem; letter-spacing: 2px;">Generaciones Inmortales de la IA</div>
+            <div class="detail-quote" style="color: #10b981;">"Los ecos de batallas que fueron soñadas y escritas por mentes mecánicas."</div>
+        </div>
+
+        <div id="archive-list" class="bb-list">
+            <!-- Archivos inyectados por JS -->
+        </div>
+    </main>
+
+    <!-- PANTALLA QUINTA: La Bóveda Comunitaria -->
+    <main id="community-screen" class="container view">
+        <div class="screen-header" style="border-color: #3b82f6; box-shadow: 0 0 40px rgba(59, 130, 246, 0.1);">
+            <button class="btn-back" id="btn-back-from-community">
+                <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                Regresar al Salón
+            </button>
+            <div class="detail-title" style="color: #3b82f6;">
+                <span>🌐</span> <span>EL SANTUARIO COMUNITARIO</span>
+            </div>
+            <div style="font-size: 1.2rem; margin-bottom: 0.5rem; letter-spacing: 2px;">El Archivo Sincronizado del Gremio</div>
+            <div class="detail-quote" style="color: #3b82f6;">"Aportes mágicos compartidos por los Planeswalkers desde cualquier rincón. Protegido bajo contraseña."</div>
+        </div>
+
+        <div id="community-loader" style="text-align:center; padding: 3rem; color: #3b82f6;">
+            <div style="font-size: 1.5rem; margin-bottom: 1rem;" class="glitch-text" data-text="Sincronizando con Firebase...">Sincronizando con Firebase...</div>
+        </div>
+
+        <div id="community-filters" style="display: none; justify-content: center; gap: 1rem; margin-bottom: 2rem;">
+            <button class="btn-filter-format active" data-filter="all" style="padding: 0.5rem 1.5rem; border-radius: 20px; border: 1px solid #3b82f6; background: rgba(59, 130, 246, 0.4); color: white; cursor: pointer;">Todos</button>
+            <button class="btn-filter-format" data-filter="standard" style="padding: 0.5rem 1.5rem; border-radius: 20px; border: 1px solid #ef4444; background: transparent; color: white; cursor: pointer;">⚔️ Clásico</button>
+            <button class="btn-filter-format" data-filter="commander" style="padding: 0.5rem 1.5rem; border-radius: 20px; border: 1px solid #f59e0b; background: transparent; color: white; cursor: pointer;">👑 Commander</button>
+        </div>
+
+        <div id="community-list" class="bb-list" style="display: none;">
+            <!-- Bases de datos inyectadas vía Firebase -->
+        </div>
+    </main>
+
+    <!-- Modal Contraseña Comunidad -->
+    <div id="password-overlay" class="selection-overlay">
+        <div class="modal-box" style="border-color: #3b82f6; box-shadow: 0 0 20px rgba(59, 130, 246, 0.2);">
+            <button id="close-password-modal" class="btn-close-modal">✖</button>
+            <h3 style="color: #3b82f6;">Autenticación del Gremio</h3>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 2rem;">Acceso restringido a la base de datos mundial de la Battle Box.</p>
+            
+            <div class="form-group">
+                <label>Contraseña Secreta:</label>
+                <input type="password" id="community-password" placeholder="Solo los dignos podrán pasar..."/>
+            </div>
+
+            <button id="btn-confirm-password" class="btn-save-bb" style="background: rgba(59, 130, 246, 0.3); border: 1px solid #3b82f6; color: white;">Verificar Acceso</button>
+            <div id="password-error" style="color: #ef4444; margin-top: 1rem; display: none; font-size: 0.9rem;">🚫 Contraseña incorrecta. Intruso detectado.</div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

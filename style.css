@@ -1,0 +1,742 @@
+:root {
+    --bg-dark: #0f172a;
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+    
+    --color-red: #ef4444;    /* Aggro */
+    --color-blue: #3b82f6;   /* Control */
+    --color-green: #22c55e;  /* Midrange */
+    --color-purple: #a855f7; /* Tempo */
+    --color-gold: #f59e0b;   /* Combo */
+    
+    --panel-bg: rgba(30, 41, 59, 0.7);
+    --panel-border: rgba(255, 255, 255, 0.1);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: var(--bg-dark);
+    color: var(--text-main);
+    line-height: 1.6;
+    overflow-x: hidden;
+    position: relative;
+    padding-bottom: 25rem; /* Espacio para el Tooltip MTG */
+}
+
+h1, h2, h3, h4, .quote { font-family: 'Cinzel', serif; }
+
+/* Background (Simplificado por petición del usuario) */
+.background-effects {
+    display: none;
+}
+
+@keyframes float { 0% { transform: translate(0, 0) scale(1); } 100% { transform: translate(10%, 10%) scale(1.1); } }
+
+/* Floating Button BB */
+.floating-btn {
+    position: fixed;
+    top: 2rem;
+    right: 2rem;
+    background: rgba(245, 158, 11, 0.2);
+    border: 1px solid var(--color-gold);
+    color: var(--color-gold);
+    padding: 1rem 1.5rem;
+    border-radius: 50px;
+    font-family: 'Inter';
+    font-weight: 700;
+    cursor: pointer;
+    backdrop-filter: blur(5px);
+    z-index: 50;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    box-shadow: 0 0 15px rgba(245, 158, 11, 0.2);
+}
+.floating-btn:hover {
+    background: rgba(245, 158, 11, 0.4);
+    transform: scale(1.05);
+}
+
+/* SPA Views */
+.container { max-width: 1200px; margin: 0 auto; padding: 2rem; padding-top: 5rem; }
+.view {
+    display: none;
+    opacity: 0;
+    transition: opacity 0.4s ease, transform 0.4s ease;
+    transform: translateY(20px);
+}
+.view.active-view {
+    display: block;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Header & Golden Rule */
+.hero { text-align: center; margin-bottom: 3rem; }
+.hero h1 { font-size: clamp(2.5rem, 5vw, 4rem); color: #e2e8f0; text-shadow: 0 2px 10px rgba(255,255,255,0.2); letter-spacing: 2px; }
+.hero h2 { color: var(--color-gold); font-size: clamp(1.2rem, 3vw, 1.8rem); margin-bottom: 2rem; }
+.golden-rule {
+    background: rgba(255,215,0,0.05);
+    border: 1px solid var(--color-gold);
+    padding: 1.5rem;
+    border-radius: 12px;
+    margin: 2rem auto;
+    max-width: 800px;
+    box-shadow: 0 0 20px rgba(245, 158, 11, 0.1);
+}
+.golden-rule h3 { color: var(--color-gold); font-size: 1.3rem; margin-bottom: 1rem; text-align: center; }
+.golden-rule p { font-size: 1rem; color: #cbd5e1; }
+.door-glow { position: absolute; top: 0; left: 0; right: 0; bottom: 0; border-radius: 16px; opacity: 0; transition: opacity 0.3s; z-index: -1; }
+
+/* Doors (Home Nav) */
+.archetypes-nav {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 2rem;
+    margin-top: 3rem;
+}
+.arch-door {
+    position: relative;
+    background: var(--panel-bg);
+    border: 1px solid var(--panel-border);
+    border-radius: 16px;
+    padding: 3rem 1.5rem;
+    cursor: pointer;
+    backdrop-filter: blur(10px);
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    color: white;
+    text-align: center;
+    z-index: 1;
+}
+.arch-door:hover { transform: translateY(-10px) scale(1.05); z-index: 2; }
+.door-aggro:hover .door-glow { box-shadow: 0 0 30px rgba(239, 68, 68, 0.4); opacity: 1; border-color: var(--color-red); }
+.door-control:hover .door-glow { box-shadow: 0 0 30px rgba(59, 130, 246, 0.4); opacity: 1; border-color: var(--color-blue); }
+.door-midrange:hover .door-glow { box-shadow: 0 0 30px rgba(34, 197, 94, 0.4); opacity: 1; border-color: var(--color-green); }
+.door-tempo:hover .door-glow { box-shadow: 0 0 30px rgba(168, 85, 247, 0.4); opacity: 1; border-color: var(--color-purple); }
+.door-combo:hover .door-glow { box-shadow: 0 0 30px rgba(245, 158, 11, 0.4); opacity: 1; border-color: var(--color-gold); }
+.door-ramp:hover .door-glow { box-shadow: 0 0 30px rgba(6, 182, 212, 0.4); opacity: 1; border-color: #06b6d4; }
+
+.arch-door .icon { font-size: 3.5rem; display: block; margin-bottom: 1rem; }
+.arch-door h3 { font-size: clamp(1.2rem, 4vw, 1.8rem); margin-bottom: 0.5rem; line-height: 1.2; word-wrap: break-word;}
+.arch-door small { display: block; font-family: 'Inter', sans-serif; color: var(--text-muted); font-size: 0.95rem; line-height: 1.4; word-wrap: break-word; overflow-wrap: break-word; }
+
+/* Detail Screen Header */
+.screen-header { margin-bottom: 3rem; text-align: center; position: relative; padding: 3rem; background: var(--panel-bg); border-radius: 16px; border: 1px solid var(--panel-border); }
+.btn-back { position: absolute; top: 1.5rem; left: 1.5rem; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer; transition: all 0.2s; font-family: 'Inter'; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;}
+.btn-back:hover { background: rgba(255,255,255,0.2); }
+.detail-title { font-size: 3rem; margin-bottom: 0.5rem; display: flex; align-items: center; justify-content: center; gap: 1rem; }
+.detail-quote { font-style: italic; color: #cbd5e1; font-size: 1.2rem; border-left: 3px solid currentColor; display: inline-block; padding-left: 1rem; margin-top: 1rem;}
+
+/* Database Grid */
+.db-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 2rem; }
+.deck-card {
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.deck-card:hover { transform: translateY(-5px); box-shadow: 0 10px 25px rgba(0,0,0,0.5); border-color: rgba(255,255,255,0.3); }
+
+.deck-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 1rem; margin-bottom: 1rem; }
+.deck-header h4 { font-size: 1.4rem; color: #f8fafc; font-family: 'Inter', sans-serif; font-weight: 700; }
+.color-badges { display: flex; gap: 0.3rem; font-size: 1.2rem; }
+
+.deck-body { flex-grow: 1; margin-bottom: 1.5rem; }
+.mechanic-box { background: rgba(0,0,0,0.3); padding: 1rem; border-radius: 8px; font-size: 0.95rem; margin-bottom: 1rem; border-left: 2px solid; }
+.mechanic-title { font-weight: 800; display: block; margin-bottom: 0.3rem; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px;}
+
+.btn-choose {
+    width: 100%; padding: 1rem; border: none; border-radius: 8px; font-family: 'Inter'; font-weight: 700; font-size: 1.1rem;
+    cursor: pointer; transition: all 0.2s; color: white; display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+}
+.btn-choose:hover { filter: brightness(1.2); transform: scale(1.02); }
+
+/* Form Selection Overlay */
+.selection-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); z-index: 100; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+.selection-overlay.active { opacity: 1; pointer-events: auto; }
+.modal-box { background: var(--panel-bg); border: 1px solid var(--panel-border); border-radius: 16px; padding: 2rem; width: 90%; max-width: 500px; text-align: center; position: relative;}
+.btn-close-modal { position: absolute; top: 1rem; right: 1rem; background: transparent; border: none; font-size: 1.5rem; color: white; cursor: pointer; }
+.modal-box h3 { font-size: 1.8rem; color: var(--color-gold); margin-bottom: 1rem; }
+.modal-deck { font-size: 1.5rem; font-weight: bold; background: rgba(0,0,0,0.3); padding: 1rem; border-radius: 8px; margin-bottom: 1rem; }
+
+.form-group { text-align: left; margin-bottom: 1.2rem; }
+.form-group label { display: block; margin-bottom: 0.5rem; color: var(--text-muted); font-size: 0.9rem;}
+.form-group input, .form-group select {
+    width: 100%; padding: 0.8rem; border-radius: 8px; border: 1px solid var(--panel-border); 
+    background: rgba(0,0,0,0.5); color: white; font-family: inherit; font-size: 1rem;
+}
+.form-group select option { background: #1e293b; }
+
+.btn-save-bb { width: 100%; padding: 1rem; border: none; border-radius: 8px; background: var(--color-gold); color: #000; font-size: 1.1rem; font-weight: bold; cursor: pointer; transition: transform 0.2s; }
+.btn-save-bb:hover { filter: brightness(1.1); transform: translateY(-2px); }
+
+/* Battle Box List */
+.bb-list {
+    display: flex; flex-direction: column; gap: 1rem;
+}
+.bb-item {
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
+    padding: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.bb-info h4 { font-size: 1.4rem; margin-bottom: 0.3rem; }
+.bb-info p { color: var(--text-muted); font-size: 0.9rem; }
+
+.bb-actions {
+    display: flex;
+    gap: 1rem;
+}
+.btn-prompt { background: var(--color-blue); border: none; color: white; padding: 0.8rem 1.2rem; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+.btn-prompt:hover { background: #2563eb; transform: scale(1.05);}
+.btn-delete { background: var(--color-red); border: none; color: white; padding: 0.8rem 1.2rem; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+.btn-delete:hover { background: #dc2626; transform: scale(1.05);}
+
+.empty-bb { text-align: center; padding: 4rem; color: var(--text-muted); font-style: italic; }
+
+@media (max-width: 768px) {
+    .container { padding: 1rem; padding-top: 5rem; }
+    .bb-item { flex-direction: column; align-items: stretch; gap: 1rem; }
+}
+
+/* -------------------------------------
+ *  Estilos Mágicos: IA y Tooltip 
+ * ------------------------------------- */
+
+/* Carta interactiva (Texto devuelto por Gemini) */
+.mtg-card {
+    color: var(--color-purple);
+    font-weight: bold;
+    cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%23f59e0b" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>'), pointer;
+    border-bottom: 1px dashed var(--color-purple);
+    transition: all 0.2s;
+    position: relative;
+    padding: 0 4px;
+    background: rgba(168, 85, 247, 0.1);
+    border-radius: 4px;
+}
+.mtg-card:hover {
+    color: var(--color-gold);
+    border-bottom: 1px solid var(--color-gold);
+    background: rgba(245, 158, 11, 0.15);
+    text-shadow: 0 0 8px rgba(245, 158, 11, 0.6);
+}
+
+/* Tooltip Flotante de Scryfall */
+#mtg-tooltip {
+    position: absolute;
+    z-index: 9999;
+    pointer-events: none; /* Que el ratón no interaccione con él, sólo hover */
+    background: #000;
+    border-radius: 4.75% / 3.5%; /* Forma clásica de carta MTG */
+    box-shadow: 0 10px 30px rgba(0,0,0,0.8), 0 0 15px rgba(245, 158, 11, 0.5);
+    width: 250px;
+    height: 350px;
+    overflow: hidden;
+    transform: translate(15px, 15px); /* Offset para que no tape el cursor */
+    display: none; 
+    border: 1px solid rgba(255,255,255,0.2);
+}
+#mtg-tooltip img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* Cajas de mazos devueltas por IA */
+.ai-deck-box {
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.95));
+    border: 1px solid var(--color-gold);
+    padding: 2.5rem;
+    border-radius: 12px;
+    margin-bottom: 3rem;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.6), inset 0 0 30px rgba(168, 85, 247, 0.1);
+    line-height: 1.7;
+    position: relative;
+    overflow: hidden;
+}
+.ai-deck-box::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(to right, transparent, var(--color-gold), transparent);
+}
+.ai-deck-box h1, .ai-deck-box h2, .ai-deck-box h3 {
+    color: var(--color-gold);
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+    font-family: 'Cinzel', serif;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+.ai-deck-box h3 {
+    border-bottom: 2px solid rgba(245, 158, 11, 0.3);
+    padding-bottom: 0.5rem;
+    display: inline-block;
+}
+.ai-deck-box hr {
+    border: none;
+    border-top: 1px dashed rgba(245, 158, 11, 0.3);
+    margin: 2.5rem 0;
+}
+.ai-deck-box strong {
+    color: var(--color-purple);
+    font-weight: 800;
+}
+.ai-deck-box p {
+    margin-bottom: 1rem;
+}
+.ai-deck-box ul {
+    margin-bottom: 1.5rem;
+    padding-left: 1.2rem;
+}
+.ai-deck-box li {
+    margin-bottom: 0.4rem;
+}
+
+/* Contenedor en modo lista (columnas) */
+.ai-results-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+/* Botones de alternancia de vista */
+.btn-view-toggle.active {
+    background: rgba(245, 158, 11, 0.4) !important;
+    box-shadow: 0 0 10px rgba(245, 158, 11, 0.3);
+}
+.btn-view-toggle:hover {
+    background: rgba(245, 158, 11, 0.2) !important;
+}
+
+/* -------------------------------------
+ *  Tribunal Superior (DeepSeek R1) 
+ * ------------------------------------- */
+.judgment-panel {
+    background: #000;
+    border: 1px solid #0ea5e9;
+    padding: 2.5rem;
+    border-radius: 8px;
+    margin-top: 3rem;
+    margin-bottom: 2rem;
+    font-family: 'Courier New', Courier, monospace;
+    color: #38bdf8;
+    position: relative;
+    box-shadow: 0 0 30px rgba(14, 165, 233, 0.15);
+}
+.judgment-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #0ea5e9;
+    padding-bottom: 1rem;
+    margin-bottom: 1.5rem;
+}
+.judgment-header h4 {
+    font-family: 'Courier New', Courier, monospace;
+    color: #0ea5e9;
+    font-size: 1.4rem;
+    letter-spacing: 2px;
+}
+.deepseek-badge {
+    background: rgba(14, 165, 233, 0.2);
+    color: #38bdf8;
+    padding: 0.3rem 0.8rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    border: 1px solid #0ea5e9;
+}
+.judgment-content p {
+    color: #94a3b8;
+    margin-bottom: 1.5rem;
+    font-family: 'Inter', sans-serif;
+}
+#judgment-api-key {
+    background: #0f172a;
+    border: 1px solid #0ea5e9;
+    color: #38bdf8;
+    flex-grow: 1;
+    padding: 0.8rem;
+    font-family: 'Courier New', Courier, monospace;
+    border-radius: 4px;
+}
+.btn-judge {
+    background: #0ea5e9;
+    color: #000;
+    border: none;
+    padding: 0.8rem 2rem;
+    font-weight: bold;
+    cursor: pointer;
+    font-family: 'Courier New', Courier, monospace;
+    transition: all 0.2s;
+    border-radius: 4px;
+}
+.btn-judge:hover {
+    background: #38bdf8;
+    box-shadow: 0 0 15px rgba(14, 165, 233, 0.5);
+}
+.judgment-loader {
+    margin-top: 2rem;
+    text-align: center;
+    color: #facc15;
+    font-size: 1.1rem;
+}
+.glitch-text {
+    display: inline-block;
+    animation: glitch 1.5s linear infinite;
+}
+@keyframes glitch {
+    2%, 64% { transform: translate(2px,0) skew(0deg); }
+    4%, 60% { transform: translate(-2px,0) skew(0deg); }
+    62% { transform: translate(0,0) skew(5deg); }
+}
+.judgment-verdict {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    background: rgba(15, 23, 42, 0.8);
+    border: 1px dashed #0ea5e9;
+    white-space: normal;
+    border-radius: 4px;
+    line-height: 1.7;
+}
+.judgment-verdict h1, .judgment-verdict h2, .judgment-verdict h3 {
+    color: #facc15;
+    margin-bottom: 1rem;
+    margin-top: 1rem;
+}
+.judgment-verdict p {
+    color: #f8fafc;
+    font-family: 'Inter', sans-serif;
+}
+.judgment-verdict ul, .judgment-verdict ol {
+    color: #f8fafc;
+    margin-left: 2rem;
+    font-family: 'Inter', sans-serif;
+    margin-bottom: 1rem;
+}
+
+/* -------------------------------------
+ *  Portal de Entrada Épico (Formatos) - Variante 3: Fortaleza Antigua
+ * ------------------------------------- */
+.intro-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    background-color: #050505;
+    background-position: center bottom;
+    background-size: cover;
+    background-repeat: no-repeat;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    perspective: 1500px;
+}
+.intro-overlay::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    /* Viñeta cinemática sutil - deja ver el fondo claramente */
+    background: linear-gradient(to top, rgba(10,10,12,0.7) 0%, rgba(10,10,12,0.05) 40%, rgba(10,10,12,0.3) 100%);
+    z-index: 1;
+    pointer-events: none;
+}
+/* Zoom muy sutil a las cenizas del fondo */
+@keyframes cinematicZoom {
+    0% { transform: scale(1); }
+    100% { transform: scale(1.05); }
+}
+#epic-canvas {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    z-index: 3;
+    pointer-events: none;
+    mix-blend-mode: screen; /* Para que las brasas destaquen más fuertes sobre la niebla */
+}
+
+/* El Contenido Frontal */
+.intro-content {
+    position: relative;
+    z-index: 4;
+    text-align: center;
+    animation: fadeInIntro 2s ease-out;
+}
+@keyframes fadeInIntro {
+    0% { opacity: 0; transform: translateY(20px); }
+    100% { opacity: 1; transform: translateY(0); }
+}
+
+.intro-title {
+    font-family: 'Cinzel', serif;
+    font-size: clamp(3.5rem, 8vw, 7rem);
+    /* Textura Metálica Pulida */
+    background: linear-gradient(
+        to bottom, 
+        #bf953f 0%, 
+        #fcf6ba 20%, 
+        #b38728 40%, 
+        #fbf5b7 60%, 
+        #aa771c 80%,
+        #92400e 100%
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    /* Relieve y Reflejo Negro Profundo */
+    filter: drop-shadow(0 4px 0px rgba(0,0,0,1)) drop-shadow(0 12px 15px rgba(0,0,0,0.9));
+    margin-bottom: 0.2rem;
+    letter-spacing: 20px;
+    font-weight: 900;
+}
+.intro-subtitle {
+    font-size: 1.4rem;
+    font-weight: 700;
+    /* Textura Metálica a Juego */
+    background: linear-gradient(
+        to bottom, 
+        #bf953f 0%, 
+        #fcf6ba 50%, 
+        #b38728 100%
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 2px 2px rgba(0,0,0,0.9));
+    margin-bottom: 5rem;
+    font-family: 'Cinzel', serif;
+    letter-spacing: 6px;
+    text-transform: uppercase;
+}
+.format-choices {
+    display: flex;
+    justify-content: center;
+    flex-wrap: nowrap; /* Evita que se separen al saltar de línea */
+    align-items: flex-end; 
+    position: relative;
+    z-index: 4;
+    margin-top: 2rem;
+}
+
+/* Botones Fortaleza y Runas (Stone Monoliths en 3D Real) */
+.btn-format {
+    background: transparent;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    width: 580px; 
+    max-width: 48vw; 
+    margin: 0 -8vw; /* Acercamiento forzado mediante márgenes negativos */
+    height: auto;
+    position: relative;
+    overflow: visible; 
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    transform-style: preserve-3d;
+}
+
+/* El elemento gráfico real extraído por el usuario */
+.btn-format img.monolith-asset {
+    width: 100%;
+    height: auto;
+    display: block;
+    filter: drop-shadow(0 20px 30px rgba(0,0,0,0.9)); /* Imita el contacto físico con el aire */
+    transition: all 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+    position: relative;
+    z-index: 20;
+    image-rendering: high-quality;
+    image-rendering: -webkit-optimize-contrast;
+    -ms-interpolation-mode: nearest-neighbor;
+}
+
+/* Levitación 3D pura al hacer hover */
+.btn-format:hover img.monolith-asset {
+    transform: translateY(-15px) scale(1.05);
+}
+
+/* Brillo dinámico proyectado según el formato */
+.btn-blue:hover img.monolith-asset {
+    filter: 
+        drop-shadow(0 30px 40px rgba(0,0,0,0.9)) 
+        drop-shadow(0 0 35px rgba(14, 165, 233, 0.5)); /* Resplandor Mágico Azul */
+}
+
+.btn-orange:hover img.monolith-asset {
+    filter: 
+        drop-shadow(0 30px 40px rgba(0,0,0,0.9)) 
+        drop-shadow(0 0 35px rgba(249, 115, 22, 0.5)); /* Resplandor Ígneo Naranja */
+}
+
+.btn-blue:hover .icon, .btn-blue:hover h3, .btn-blue:hover .rune {
+    color: #bae6fd;
+    text-shadow: 0 0 15px rgba(14, 165, 233, 0.8), 0 0 30px rgba(56, 189, 248, 0.6);
+}
+.btn-orange:hover .icon, .btn-orange:hover h3, .btn-orange:hover .rune {
+    color: #fed7aa;
+    text-shadow: 0 0 15px rgba(249, 115, 22, 0.8), 0 0 30px rgba(251, 146, 60, 0.6);
+}
+
+.monolith-content {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+.monolith-divider {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 60%;
+    height: 2px;
+    background: linear-gradient(to right, transparent, rgba(255,255,255,0.2), transparent);
+    margin: 1.5rem 0;
+    position: relative;
+}
+.monolith-divider .rune {
+    position: absolute;
+    background: #171c24; /* Color similar a la piedra para fingir corte */
+    padding: 0 0.5rem;
+    color: #64748b;
+    font-size: 1.2rem;
+    transition: all 0.4s ease;
+}
+
+.btn-format .icon { 
+    font-size: 3.5rem; 
+    color: #cbd5e1;
+    filter: drop-shadow(0 5px 10px rgba(0,0,0,0.8));
+    transition: all 0.4s ease;
+}
+.btn-format h3 { 
+    font-family: 'Cinzel', serif; 
+    font-size: 2.3rem; 
+    color: #e2e8f0;
+    letter-spacing: 2px;
+    transition: all 0.4s ease;
+    line-height: 1.1;
+}
+.btn-format small { 
+    font-size: 0.95rem; 
+    color: #64748b; 
+    font-family: 'Inter', sans-serif;
+    letter-spacing: 2px;
+    line-height: 1.4;
+    transition: all 0.4s ease;
+}
+
+/* Runas Decorativas alrededor del borde de la piedra */
+.runes-top, .runes-bottom, .runes-left, .runes-right {
+    position: absolute;
+    font-size: 1.1rem;
+    letter-spacing: 6px;
+    opacity: 0.4;
+    transition: all 0.5s ease;
+    font-family: 'Cinzel', serif;
+    color: #475569;
+    z-index: 1;
+}
+.runes-left { top: 15%; left: 1rem; writing-mode: vertical-rl; text-orientation: upright; bottom: 15%; display: flex; justify-content: space-between;}
+.runes-right { top: 15%; right: 1rem; writing-mode: vertical-rl; text-orientation: upright; bottom: 15%; display: flex; justify-content: space-between;}
+.runes-top { top: 1.5rem; left: 50%; transform: translateX(-50%); width: 80%; display: flex; justify-content: space-between;}
+.runes-bottom { bottom: 1.5rem; left: 50%; transform: translateX(-50%); width: 80%; display: flex; justify-content: space-between;}
+
+.btn-blue:hover .runes-top, .btn-blue:hover .runes-bottom, .btn-blue:hover .runes-left, .btn-blue:hover .runes-right {
+    opacity: 0.8;
+    color: #0ea5e9;
+    text-shadow: 0 0 10px #0ea5e9;
+}
+.btn-orange:hover .runes-top, .btn-orange:hover .runes-bottom, .btn-orange:hover .runes-left, .btn-orange:hover .runes-right {
+    opacity: 0.8;
+    color: #f97316;
+    text-shadow: 0 0 10px #f97316;
+}
+
+.intro-fade-out {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* -------------------------------------
+ *  FOG OF WAR - ELIMINADO POR PETICIÓN
+ * ------------------------------------- */
+.fog-container {
+    display: none;
+}
+
+/* --- MEDIA QUERIES PARA MÓVILES (REFINAMIENTO) --- */
+@media (max-width: 768px) {
+    /* Pantalla Intro */
+    .intro-title {
+        font-size: clamp(2rem, 12vw, 3.5rem);
+        letter-spacing: 12px;
+        margin-top: 1rem;
+    }
+    .intro-subtitle {
+        font-size: 1rem;
+        letter-spacing: 4px;
+        margin-bottom: 2rem;
+    }
+    .format-choices {
+        flex-direction: column;
+        gap: 2rem;
+        align-items: center;
+        overflow-y: visible;
+        margin-top: 1rem;
+    }
+    .btn-format {
+        width: 80vw;
+        max-width: 280px;
+        margin: 0; /* Sin márgenes negativos en móvil */
+    }
+
+    /* Ajustes generales de SPA */
+    .container {
+        padding: 1rem;
+        padding-top: 4rem;
+    }
+    .hero h1 {
+        font-size: 2.22rem;
+        letter-spacing: 1px;
+    }
+    .detail-title {
+        font-size: 2rem;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    .db-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    /* Botones flotantes en móvil */
+    .floating-btn {
+        padding: 0.6rem 1rem;
+        font-size: 0.8rem;
+        right: 1rem;
+        top: 1rem;
+    }
+    #btn-open-archive {
+        top: 4rem !important;
+    }
+    #btn-open-community {
+        top: 7rem !important;
+    }
+
+    /* Modal box en móvil */
+    .modal-box {
+        width: 95%;
+        padding: 1.5rem;
+    }
+}
