@@ -524,6 +524,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     if (introVideo) {
         // El primero siempre es Colors.webm según petición del usuario
+        introVideo.muted = true; // Asegura que el navegador permita el autoplay
         introVideo.src = `${introVideoFolder}Colors.webm`;
         introVideo.play();
         

@@ -714,6 +714,13 @@ h1, h2, h3, h4, .quote { font-family: 'Cinzel', serif; }
         margin: 0; /* Sin márgenes negativos en móvil */
     }
 
+    /* Video responsivo: se ve completo con bordes negros en móvil */
+    #intro-video-bg {
+        object-fit: contain;
+        background-color: #000;
+        object-position: center;
+    }
+
     /* Ajustes generales de SPA */
     .container {
         padding: 1rem;
