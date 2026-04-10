@@ -519,7 +519,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Sistema Automático de Fondos Animados WebM AAA
     const introScreen = document.getElementById('intro-screen');
     const introVideo = document.getElementById('intro-video-bg');
-    const introVideoFolder = 'gif animados/';
+    const introVideoFolder = 'videos/';
     const videoFiles = ['Colors.webm', 'download (1).webm', 'download.webm']; 
     
     if (introVideo) {
