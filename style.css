@@ -430,17 +430,27 @@ h1, h2, h3, h4, .quote { font-family: 'Cinzel', serif; }
  * ------------------------------------- */
 .intro-overlay {
     position: fixed;
-    top: 0; left: 0; width: 100vw; height: 100vh;
+    top: 0; left: 0; width: 100vw; 
+    height: 100vh; /* Fallback */
+    height: 100dvh; 
     background-color: #050505;
-    background-position: center bottom;
-    background-size: cover;
-    background-repeat: no-repeat;
     z-index: 9999;
     display: flex;
     align-items: center;
     justify-content: center;
     overflow: hidden;
     perspective: 1500px;
+}
+
+#intro-video-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center bottom; /* Prioriza que la parte de abajo sea visible */
+    z-index: 0;
 }
 .intro-overlay::before {
     content: '';
@@ -532,9 +542,9 @@ h1, h2, h3, h4, .quote { font-family: 'Cinzel', serif; }
     border: none;
     padding: 0;
     cursor: pointer;
-    width: 580px; 
-    max-width: 48vw; 
-    margin: 0 -8vw; /* Acercamiento forzado mediante márgenes negativos */
+    width: 700px; 
+    max-width: 50vw; 
+    margin: 0 -10vw; /* Acercamiento forzado mediante márgenes negativos */
     height: auto;
     position: relative;
     overflow: visible; 
@@ -543,6 +553,7 @@ h1, h2, h3, h4, .quote { font-family: 'Cinzel', serif; }
     justify-content: center;
     align-items: center;
     transform-style: preserve-3d;
+    pointer-events: none; /* Ignora el clic en el área transparente del botón */
 }
 
 /* El elemento gráfico real extraído por el usuario */
@@ -557,6 +568,7 @@ h1, h2, h3, h4, .quote { font-family: 'Cinzel', serif; }
     image-rendering: high-quality;
     image-rendering: -webkit-optimize-contrast;
     -ms-interpolation-mode: nearest-neighbor;
+    pointer-events: auto; /* Detecta el clic solo sobre la imagen del monolito */
 }
 
 /* Levitación 3D pura al hacer hover */
@@ -739,4 +751,96 @@ h1, h2, h3, h4, .quote { font-family: 'Cinzel', serif; }
         width: 95%;
         padding: 1.5rem;
     }
+}
+
+/* --- Colapsables Premium (IA Results) --- */
+.collapsible-deck {
+    padding: 0 !important;
+    border: 1px solid rgba(245, 158, 11, 0.4);
+    background: rgba(15, 23, 42, 0.4);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    margin-bottom: 1rem;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.collapsible-deck:hover {
+    border-color: var(--color-gold);
+    box-shadow: 0 0 20px rgba(245, 158, 11, 0.15);
+}
+
+.deck-summary {
+    list-style: none;
+    padding: 1.5rem 2rem;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: 'Cinzel', serif;
+    font-size: 1.3rem;
+    color: var(--color-gold);
+    user-select: none;
+    transition: background 0.2s;
+}
+
+.deck-summary::-webkit-details-marker {
+    display: none;
+}
+
+.deck-summary:hover {
+    background: rgba(245, 158, 11, 0.05);
+}
+
+.deck-summary span {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.deck-summary .chevron {
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    color: var(--text-muted);
+}
+
+details[open] .deck-summary .chevron {
+    transform: rotate(180deg);
+    color: var(--color-gold);
+}
+
+.deck-content-inner {
+    padding: 2rem;
+    border-top: 1px solid rgba(245, 158, 11, 0.2);
+    background: rgba(0, 0, 0, 0.2);
+    animation: slideDown 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* --- Rarezas de Cartas --- */
+.rarity-c { color: #94a3b8 !important; border-bottom-color: #94a3b8 !important; background: rgba(148, 163, 184, 0.1) !important; }
+.rarity-u { color: #cbd5e1 !important; border-bottom-color: #cbd5e1 !important; background: rgba(203, 213, 225, 0.1) !important; text-shadow: 0 0 5px rgba(255,255,255,0.2); }
+.rarity-r { color: var(--color-gold) !important; border-bottom-color: var(--color-gold) !important; background: rgba(245, 158, 11, 0.1) !important; text-shadow: 0 0 8px rgba(245, 158, 11, 0.4); }
+.rarity-m { color: #f97316 !important; border-bottom-color: #f97316 !important; background: rgba(249, 115, 22, 0.1) !important; text-shadow: 0 0 10px rgba(249, 115, 22, 0.5); }
+
+/* --- Categorías Battle Box --- */
+.bb-category-title {
+    font-size: 1.2rem;
+    letter-spacing: 3px;
+    margin: 2rem 0 1rem 0;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    background: rgba(255,255,255,0.05);
+    display: inline-block;
+}
+.title-standard { color: var(--color-blue); border-left: 4px solid var(--color-blue); }
+.title-commander { color: var(--color-gold); border-left: 4px solid var(--color-gold); }
+
+.bb-item-standard { border-inline-start: 4px solid var(--color-blue); }
+.bb-item-commander { border-inline-start: 4px solid var(--color-gold); }
+
+details[open] {
+    background: rgba(15, 23, 42, 0.8);
 }

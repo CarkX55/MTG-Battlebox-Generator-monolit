@@ -70,6 +70,13 @@ const mtgDatabase = {
                 mechanic: "Tienes cartas suicidas en la mano; las usas para descartarte tus propias criaturas a la basura. ¿Por qué? Porque tus criaturas tienen habilidades desde el cementerio que vuelven solas a la vida gratis y furiosas.",
                 tribal: "Vampiros, Bestias Suicidas",
                 theme: "#7f1d1d"
+            },
+            {
+                name: "Werewolves (Hombres Lobo)",
+                colors: "🔴 🟢",
+                mechanic: "Aprovechas el ciclo del día y la noche. De día tus humanos son eficientes, pero de noche se transforman en bestias colosales que arrollan cualquier defensa. Obligas al rival a jugar hechizos cuando no quiere para evitar que anochezca.",
+                tribal: "Hombres Lobo, Humanos",
+                theme: "#b45309"
             }
         ]
     },
@@ -475,6 +482,13 @@ const commanderDatabase = {
                 mechanic: "Generas elfos que producen maná (dorks). Cada elfo hace que el siguiente sea más fuerte o genere más elfos. Produces cantidades industriales de maná para lanzar un hechizo final ('Finale of Devastation').",
                 tribal: "Elfos",
                 theme: "#10b981"
+            },
+            {
+                name: "Slivers (Fragmentados)",
+                colors: "🔴 🟢 🔵 ⚪ ⚫",
+                mechanic: "La colmena definitiva. Cada Fragmentado que juegas otorga una habilidad a TODOS los demás Fragmentados en mesa (Volar, Prisa, Arrollar, etc.). Cuantos más tienes, más invencibles se vuelven por pura acumulación de poderes compartidos.",
+                tribal: "Fragmentados",
+                theme: "#f59e0b"
             }
         ]
     },
@@ -502,13 +516,23 @@ let globalFormat = 'standard'; // 'standard' o 'commander'
 let battleBox = JSON.parse(localStorage.getItem('mtgBattleBox')) || [];
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Sistema Automático de Fondos Aleatorios AAA
+    // Sistema Automático de Fondos Animados WebM AAA
     const introScreen = document.getElementById('intro-screen');
-    // Asegúrate de que las imágenes se llamen exactamente así en tu carpeta (o cambia los nombres aquí):
-    const backgrounds = ['fondo1.jpg', 'fondo2.jpg', 'fondo3.jpg']; 
-    const randomBg = backgrounds[Math.floor(Math.random() * backgrounds.length)];
-    if (introScreen) {
-        introScreen.style.backgroundImage = `url('${randomBg}')`;
+    const introVideo = document.getElementById('intro-video-bg');
+    const introVideoFolder = 'gif animados/';
+    const videoFiles = ['Colors.webm', 'download (1).webm', 'download.webm']; 
+    
+    if (introVideo) {
+        // El primero siempre es Colors.webm según petición del usuario
+        introVideo.src = `${introVideoFolder}Colors.webm`;
+        introVideo.play();
+        
+        // Lógica opcional: Cuando termine un video, poner uno aleatorio
+        introVideo.addEventListener('ended', () => {
+            const nextVideo = videoFiles[Math.floor(Math.random() * videoFiles.length)];
+            introVideo.src = `${introVideoFolder}${nextVideo}`;
+            introVideo.play();
+        });
     }
 
     // La niebla ahora está integrada directamente en la intro-screen como efecto decorativo
@@ -557,7 +581,16 @@ document.addEventListener('DOMContentLoaded', () => {
         text = text.replace(/^\s*\*\s+(.*$)/gim, '<li>$1</li>');
         text = text.replace(/(<li>.*<\/li>)/gms, '<ul>$1</ul>');
         text = text.replace(/\n\n/g, '</p><p>');
+        
+        // 🔥 NUEVO: Soporte para [[Carta|Rareza]]
+        text = text.replace(/\[\[(.*?)\|(.*?)\]\]/g, (match, name, rarity) => {
+            const r = rarity.trim().toLowerCase();
+            return `<span class="mtg-card rarity-${r}" data-card="${name}">${name}</span>`;
+        });
+        
+        // Fallback para [[Carta]] simple
         text = text.replace(/\[\[(.*?)\]\]/g, '<span class="mtg-card" data-card="$1">$1</span>');
+        
         return `<p>${text}</p>`;
     }
 
@@ -867,6 +900,7 @@ document.addEventListener('DOMContentLoaded', () => {
             id: Date.now(),
             archetype: activeSelection.archName,
             subArchetype: activeSelection.deckName,
+            format: activeSelection.format, // 🔥 NUEVO: Persistimos el formato
             tribe: tribalContainer.style.display !== 'none' ? configTribe.value.trim() : 'N/A',
             colorsFreq: configColors.value,
             extraNotes: configExtra.value.trim()
@@ -980,10 +1014,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
         btnMaster.style.display = 'inline-block';
 
+        const standardDecks = battleBox.filter(d => d.format === 'standard');
+        const commanderDecks = battleBox.filter(d => d.format === 'commander');
+
         let html = '';
-        battleBox.forEach(deck => {
-            html += `
-                <div class="bb-item">
+
+        if (standardDecks.length > 0) {
+            html += `<h3 class="bb-category-title title-standard">🏰 MAZOS STANDARD / KITCHEN TABLE</h3>`;
+            standardDecks.forEach(deck => html += renderDeckItem(deck, 'standard'));
+        }
+
+        if (commanderDecks.length > 0) {
+            html += `<h3 class="bb-category-title title-commander">👑 MAZOS COMMANDER (EDH)</h3>`;
+            commanderDecks.forEach(deck => html += renderDeckItem(deck, 'commander'));
+        }
+
+        listDiv.innerHTML = html;
+
+        function renderDeckItem(deck, format) {
+            return `
+                <div class="bb-item bb-item-${format}">
                     <div class="bb-info">
                         <h4>[${deck.archetype}] - ${deck.subArchetype}</h4>
                         <p><strong>Colores:</strong> ${deck.colorsFreq} | <strong>Raza/Tribu:</strong> ${deck.tribe || 'No aplica'}</p>
@@ -995,8 +1045,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 </div>
             `;
-        });
-        listDiv.innerHTML = html;
+        }
 
         // Delete Logic
         document.querySelectorAll('.btn-delete').forEach(btn => {
@@ -1026,7 +1075,8 @@ Reglas ESTRICTAS de Commander:
 2. Regla Singleton: NO puedes repetir ninguna carta (salvo tierras básicas). SOLO 1 COPIA DE CADA CARTA.
 3. Identidad de Color: Todas las 99 cartas DEBEN pertenecer exclusivamente a la identidad de color del Comandante.
 
-Queremos usar cartas MUY POTENTES y sinergias impresionantes, pero sin combos aburridos de daño infinito ininterrumpible en turno 3. Fomenta la interacción de mesa.
+RAREZAS Y FORMATO: Escribe cada carta como: "Cantidad [[Nombre exacto en Inglés|Rareza]]".
+Rarezas: C (Común), U (Infrecuente), R (Rara), M (Mítica).
 
 Parámetros para el mazo:
 - Arquetipo EDH: ${d.archetype} -> Variante: ${d.subArchetype}
@@ -1034,13 +1084,13 @@ Parámetros para el mazo:
 - Tribu Requerida: ${d.tribe === 'N/A' || d.tribe === '' ? 'La óptima' : d.tribe}
 - Instrucciones: ${d.extraNotes || 'Ninguna.'}
 
-Salida: Pásame la lista final estructurada (separada por Comandante, Criaturas, Hechizos, Artefactos, Encantamientos y Tierras) lista copiar en MTGPrint.`;
+Salida: Pásame la lista final estructurada con desplegables para cada sección de cartas.`;
                 } else {
                     prompt = `Actúa como un experto jugador histórico y pro-builder de Magic: The Gathering.
 Nuestra misión es diseñar una lista EXCELENTE de 60 cartas para el formato "Kitchen Table Magic" de altísimo nivel.
 
-Queremos usar cartas MUY POTENTES (cartones históricos rotos de Legacy/Modern), pero manteniendo la DIVERSIÓN. 
-EL MAZO NO PUEDE GANAR CONSISTENTEMENTE EN TURNO 1 O 2 mediante combos ininterrumpibles. Hazlo súper competitivo pero interactable (4-5 turnos para ganar mínimo).
+RAREZAS Y FORMATO: Escribe cada carta como: "Cantidad [[Nombre exacto en Inglés|Rareza]]".
+Rarezas: C (Común), U (Infrecuente), R (Rara), M (Mítica).
 
 Parámetros:
 - Arquetipo Principal: ${d.archetype} -> Variante: ${d.subArchetype}
@@ -1048,7 +1098,7 @@ Parámetros:
 - Raza/Tribu Requerida: ${d.tribe === 'N/A' || d.tribe === '' ? 'La óptima' : d.tribe}
 - Instrucciones extra obligatorias: ${d.extraNotes || 'Ninguna.'}
 
-Salida esperada: Lista limpia separada por Criaturas, Hechizos, Artefactos, Tierras y Banquillo de 15, formato texto copia y pega directo.`;
+Salida esperada: Lista limpia y estructurada.`;
                 }
 
                 // Copy to clipboard
@@ -1177,8 +1227,32 @@ A continuación, los parámetros exigidos para cada uno de los ${battleBox.lengt
                 btnViewGuide.style.background = 'rgba(245, 158, 11, 0.4)';
                 btnViewList.style.background = 'transparent';
                 
-                const html = markdownToHtml(lastAiResponse);
-                aiResults.innerHTML = `<div class="ai-deck-box">${html}</div>`;
+                const chunks = lastAiResponse.split('---').filter(c => c.trim().length > 10);
+                if (chunks.length > 1) {
+                    // Si hay varios mazos, los colapsamos individualmente incluso en vista guía
+                    let fullHtml = '';
+                    chunks.forEach(chunk => {
+                        const lines = chunk.trim().split('\n');
+                        let titleLine = lines[0].replace(/#/g, '').trim() || "Mazo Generado";
+                        fullHtml += `
+                            <div class="ai-deck-box collapsible-deck">
+                                <details>
+                                    <summary class="deck-summary">
+                                        <span>${titleLine}</span>
+                                        <svg class="chevron" viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><path d="M6 9l6 6 6-6"/></svg>
+                                    </summary>
+                                    <div class="deck-content-inner">
+                                        ${markdownToHtml(chunk.trim())}
+                                    </div>
+                                </details>
+                            </div>
+                        `;
+                    });
+                    aiResults.innerHTML = fullHtml;
+                } else {
+                    const html = markdownToHtml(lastAiResponse);
+                    aiResults.innerHTML = `<div class="ai-deck-box">${html}</div>`;
+                }
             } else {
                 btnViewList.style.background = 'rgba(245, 158, 11, 0.4)';
                 btnViewGuide.style.background = 'transparent';
@@ -1189,8 +1263,23 @@ A continuación, los parámetros exigidos para cada uno de los ${battleBox.lengt
 
                 chunks.forEach(chunk => {
                     const deckDiv = document.createElement('div');
-                    deckDiv.className = 'ai-deck-box';
-                    deckDiv.innerHTML = markdownToHtml(chunk.trim());
+                    deckDiv.className = 'ai-deck-box collapsible-deck';
+                    
+                    // Extraer título sugerido y limpiar
+                    const lines = chunk.trim().split('\n');
+                    let titleLine = lines[0].replace(/#/g, '').trim() || "Mazo Generado";
+                    
+                    deckDiv.innerHTML = `
+                        <details>
+                            <summary class="deck-summary">
+                                <span>${titleLine}</span>
+                                <svg class="chevron" viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><path d="M6 9l6 6 6-6"/></svg>
+                            </summary>
+                            <div class="deck-content-inner">
+                                ${markdownToHtml(chunk.trim())}
+                            </div>
+                        </details>
+                    `;
                     container.appendChild(deckDiv);
                 });
                 aiResults.appendChild(container);
@@ -1337,22 +1426,24 @@ Mi misión es fabricar de golpe nuestra próxima GRAN TANDA de ${battleBox.lengt
 A continuación, los parámetros exigidos:\n\n`;
 
             battleBox.forEach((d, i) => {
-                const isCommander = (d.archetype + d.subArchetype).toLowerCase().includes('commander');
+                const isCommander = d.format === 'commander'; // ✅ Ahora usa el campo persistido
                 const cardCount = isCommander ? 100 : 60;
                 
                 promptIA += `--- [MAZO ${i+1}]: ${d.archetype.toUpperCase()} -> Variante: ${d.subArchetype} ---
 - Objetivos de diseño: Crear un mazo profesional de EXACTAMENTE ${cardCount} cartas.
+${isCommander ? '- REGLA CRÍTICA EDH: Mazo de 100 cartas (1 Comandante + 99 cartas) y REGLA SINGLETON (solo 1 copia de cada carta salvo tierras básicas).' : '- Formato Standard/Kitchen Table: Se permiten hasta 4 copias por carta.'}
 - Estructura: No rellenes con tierras básicas al azar. Diseña una curva de maná y un ratio de hechizos/tierras (aprox. 38% de tierras) que sea altamente competitivo y temático.
 - Colores obligados: ${d.colorsFreq}
 - Tribu requerida (si aplica): ${d.tribe === 'N/A' || d.tribe === '' ? 'Óptima para estrategia' : d.tribe}
 - Notas extra mías: ${d.extraNotes || 'Ninguna restricción.'}\n\n`;
             });
 
-            promptIA += `\n🔴 DIRECTRICES MAESTRAS DE EQUILIBRIO:
-1. CALIDAD SOBRE RELLENO: No quiero listas genéricas. Selecciona cada carta con intención. El total de ${battleBox.some(d => (d.archetype + d.subArchetype).toLowerCase().includes('commander')) ? '60 o 100' : '60'} cartas debe alcanzarse mediante una selección meditada de amenazas, respuestas y una base de maná sólida (Shocklands, Fetchlands si es necesario).
-2. EQUILIBRIO "BATTLE BOX": Los mazos deben estar diseñados para enfrentarse entre sí. Asegúrate de que ninguno sea absurdamente superior. Si un mazo es muy agresivo, asegúrate de que los otros tengan respuestas (removal o bloqueos) para sobrevivir.
-3. FORMATO OBLIGATORIO: Escribe cada carta como: "Cantidad [[Nombre exacto en Inglés]]".
-4. ESTRUCTURA: Haz un breve resumen de la sinergia del conjunto y luego entrega las listas completas.`;
+            promptIA += `\n🔴 DIRECTRICES MAESTRAS DE EQUILIBRIO Y FORMATO:
+1. RAREZA OBLIGATORIA: Por cada carta, usa el formato EXACTO: "Cantidad [[Nombre en Inglés|R]]" (donde R es C, U, R o M).
+2. CALIDAD SOBRE RELLENO: No quiero listas genéricas. Selecciona cada carta con intención. El total de ${battleBox.some(d => d.format === 'commander') ? '60 o 100' : '60'} cartas debe alcanzarse mediante una selección meditada.
+3. EQUILIBRIO "BATTLE BOX": Los mazos deben estar diseñados para enfrentarse entre sí.
+4. ESTRUCTURA: Los mazos DEBEN separarse claramente con "---".
+5. CABECERA: La PRIMERA LÍNEA de cada mazo debe ser su nombre seguido de sus iconos de color (ej: # Goblins Rojo-Verde 🔴🟢).`;
 
             // UI Feedback
             aiStatus.style.display = 'block';
@@ -1971,6 +2062,7 @@ Haz tu respuesta limpia, estéticamente agradable e innegable.`;
                     </div>
                     <div class="bb-actions">
                         <button class="btn-prompt btn-view-community" data-id="${item.docId}" style="background: rgba(59, 130, 246, 0.8); border: 1px solid #60a5fa;">Ver y Copiar</button>
+                        <button class="btn-delete btn-delete-community" data-id="${item.docId}" style="background: #e11d48; border: 1px solid #f87171;">Eliminar Nube</button>
                     </div>
                 </div>
                 `;
@@ -1981,6 +2073,7 @@ Haz tu respuesta limpia, estéticamente agradable e innegable.`;
 
             listDiv.innerHTML = html;
             
+            // Botón: Ver y Copiar
             listDiv.querySelectorAll('.btn-view-community').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     const docId = e.target.getAttribute('data-id');
@@ -2002,6 +2095,28 @@ Haz tu respuesta limpia, estéticamente agradable e innegable.`;
 
                             switchViews(communityScreen, homeScreen);
                             setTimeout(() => window.scrollTo({ top: aiPanelDiv.offsetTop - 50, behavior: 'smooth' }), 300);
+                        }
+                    }
+                });
+            });
+
+            // Botón: Eliminar de la Nube (Firebase)
+            listDiv.querySelectorAll('.btn-delete-community').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    const docId = e.target.getAttribute('data-id');
+                    const confirmacion = confirm("⚠️ ¿ESTÁS SEGURO?\n\nVas a eliminar este registro de la base de datos GLOBAL. Todos los miembros del gremio dejarán de verlo.\n\nEsta acción NO se puede deshacer.");
+                    
+                    if (confirmacion) {
+                        try {
+                            e.target.disabled = true;
+                            e.target.textContent = "⌛...";
+                            await db.collection("community-vault").doc(docId).delete();
+                            renderCommunityBox(); // Refrescar lista
+                        } catch (err) {
+                            console.error("Error al borrar de community:", err);
+                            alert("Ha ocurrido un fallo al intentar borrar el documento de Firebase.");
+                            e.target.disabled = false;
+                            e.target.textContent = "Eliminar Nube";
                         }
                     }
                 });
