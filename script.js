@@ -815,14 +815,19 @@ document.addEventListener('DOMContentLoaded', () => {
         globalFormat = format;
         introScreen.classList.add('intro-fade-out');
         
+        // Mostrar/Ocultar La Forja Personalizada según formato
+        const forgeBanner = document.getElementById('custom-forge-banner');
+        
         setTimeout(() => {
             introScreen.style.display = 'none';
             if (animationFrameId) cancelAnimationFrame(animationFrameId);
             homeScreen.classList.add('active-view');
             if (format === 'commander') {
                 renderHomeDoors(commanderDatabase);
+                if (forgeBanner) forgeBanner.style.display = 'none';
             } else {
                 renderHomeDoors(mtgDatabase);
+                if (forgeBanner) forgeBanner.style.display = 'block';
             }
         }, 2500); // 2.5s para la disipación épica de la IA de Stitch
     }
@@ -925,6 +930,121 @@ document.addEventListener('DOMContentLoaded', () => {
             setTimeout(() => to.classList.add('active-view'), 50);
         }, 400);
         window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    //  LA FORJA PERSONALIZADA: Lógica del Formulario de 3 Niveles
+    // ═══════════════════════════════════════════════════════════════
+    
+    // Toggle colapsable: Pinchar cabecera para abrir/cerrar el formulario
+    const forgeToggle = document.getElementById('forge-toggle');
+    const forgeBody = document.getElementById('forge-body');
+    const forgeChevron = document.getElementById('forge-chevron');
+    if (forgeToggle && forgeBody) {
+        forgeToggle.addEventListener('click', () => {
+            const isOpen = forgeBody.style.display !== 'none';
+            forgeBody.style.display = isOpen ? 'none' : 'block';
+            if (forgeChevron) forgeChevron.classList.toggle('open', !isOpen);
+        });
+    }
+
+    // Slider de Curva de Maná: Actualizar display en tiempo real
+    const forgeCurveSlider = document.getElementById('forge-mana-curve');
+    const forgeCurveDisplay = document.getElementById('forge-curve-display');
+    const curveLabels = {
+        1: '⚡ Híper Rápido (1/5)',
+        2: '🏃 Agresivo (2/5)',
+        3: '⚖️ Equilibrado (3/5)',
+        4: '🏔️ Pesado (4/5)',
+        5: '🐉 Jefes Titánicos (5/5)'
+    };
+    if (forgeCurveSlider && forgeCurveDisplay) {
+        forgeCurveSlider.addEventListener('input', () => {
+            forgeCurveDisplay.textContent = curveLabels[forgeCurveSlider.value] || `Nivel ${forgeCurveSlider.value}/5`;
+        });
+    }
+
+    // Botón FORJAR: Guardar Mazo Personalizado en la Battle Box
+    const btnForgeDeck = document.getElementById('btn-forge-deck');
+    if (btnForgeDeck) {
+        btnForgeDeck.addEventListener('click', () => {
+            // Recopilar colores WUBRG seleccionados
+            const manaChecks = document.querySelectorAll('#forge-wubrg input[name="forge-mana"]:checked');
+            const selectedColors = Array.from(manaChecks).map(cb => cb.value);
+            
+            if (selectedColors.length === 0) {
+                alert('⚠️ ¡Selecciona al menos un color de maná para forjar tu mazo!');
+                return;
+            }
+            
+            // Mapear colores a emojis para la Battle Box
+            const colorEmojis = { W: '⚪', U: '🔵', B: '⚫', R: '🔴', G: '🟢', C: '⚙️' };
+            const colorsDisplay = selectedColors.map(c => colorEmojis[c] || c).join(' ');
+            
+            // Recopilar Nivel 1
+            const manaPurity = document.getElementById('forge-mana-purity').value;
+            const purityLabel = manaPurity === 'strict' ? 'Maná Estricto' : 'Permitir Splash';
+            
+            // Recopilar Nivel 2
+            const keyCard = document.getElementById('forge-key-card').value.trim();
+            const lore = document.getElementById('forge-lore').value.trim();
+            const archetype = document.getElementById('forge-archetype');
+            const archetypeValue = archetype.value;
+            const archetypeLabel = archetype.options[archetype.selectedIndex].text;
+            
+            // Recopilar Nivel 3
+            const manaCurve = forgeCurveSlider ? forgeCurveSlider.value : '3';
+            const curveLabel = curveLabels[manaCurve] || `Nivel ${manaCurve}/5`;
+            const powerLevel = document.getElementById('forge-power-level');
+            const powerValue = powerLevel.value;
+            const powerLabel = powerLevel.options[powerLevel.selectedIndex].text;
+            const extraInstructions = document.getElementById('forge-extra').value.trim();
+            
+            // Construir el objeto del mazo forjado
+            const forgedDeck = {
+                id: Date.now(),
+                archetype: archetypeValue.charAt(0).toUpperCase() + archetypeValue.slice(1),
+                subArchetype: '🔨 Forja Personalizada' + (keyCard ? ` — ${keyCard}` : ''),
+                format: 'standard',
+                tribe: lore || 'Personalizado',
+                colorsFreq: `${colorsDisplay} (${purityLabel})`,
+                extraNotes: [
+                    keyCard ? `Carta Clave: ${keyCard}` : '',
+                    lore ? `Lore: ${lore}` : '',
+                    `Arquetipo: ${archetypeLabel}`,
+                    `Curva: ${curveLabel}`,
+                    `Poder: ${powerLabel}`,
+                    extraInstructions ? `Extra: ${extraInstructions}` : ''
+                ].filter(Boolean).join(' | '),
+                isForged: true // Marca especial para distinguir mazos forjados
+            };
+            
+            battleBox.push(forgedDeck);
+            localStorage.setItem('mtgBattleBox', JSON.stringify(battleBox));
+            bbCountSpan.textContent = battleBox.length;
+            
+            // Feedback visual épico
+            btnForgeDeck.innerHTML = '<span>✅ ¡MAZO FORJADO!</span>';
+            btnForgeDeck.style.background = 'linear-gradient(135deg, #059669, #10b981)';
+            btnForgeDeck.style.pointerEvents = 'none';
+            
+            setTimeout(() => {
+                btnForgeDeck.innerHTML = '<span class="forge-btn-icon">🔨</span><span>FORJAR MAZO</span><span class="forge-btn-sparks">✨</span>';
+                btnForgeDeck.style.background = '';
+                btnForgeDeck.style.pointerEvents = '';
+                
+                // Resetear formulario
+                document.querySelectorAll('#forge-wubrg input[name="forge-mana"]').forEach(cb => cb.checked = false);
+                document.getElementById('forge-mana-purity').value = 'strict';
+                document.getElementById('forge-key-card').value = '';
+                document.getElementById('forge-lore').value = '';
+                document.getElementById('forge-archetype').value = 'aggro';
+                if (forgeCurveSlider) forgeCurveSlider.value = '3';
+                if (forgeCurveDisplay) forgeCurveDisplay.textContent = curveLabels[3];
+                document.getElementById('forge-power-level').value = 'high-power';
+                document.getElementById('forge-extra').value = '';
+            }, 2000);
+        });
     }
 
     // Render Archetype detail

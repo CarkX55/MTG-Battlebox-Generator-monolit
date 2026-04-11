@@ -75,6 +75,156 @@
             <p>Adéntrate en las salas de cada Arquetipo abajo. Encontrarás la Base de Datos completa con todos los mazos catalogados en la historia de Magic. Selecciona, configura y envía a tu Battle Box.</p>
         </header>
 
+        <!-- LA FORJA PERSONALIZADA: Banner exclusivo del modo Clásico 60 cartas -->
+        <section id="custom-forge-banner" class="forge-banner" style="display: none;">
+            <div class="forge-header" id="forge-toggle" style="cursor: pointer;">
+                <div class="forge-icon">🔨</div>
+                <h2 class="forge-title">LA FORJA PERSONALIZADA</h2>
+                <p class="forge-subtitle">Diseña tu mazo desde los cimientos. Controla cada aspecto: color, narrativa, velocidad y presupuesto.</p>
+                <div class="forge-chevron" id="forge-chevron">▼</div>
+                <div class="forge-divider"></div>
+            </div>
+
+            <div id="forge-body" class="forge-body" style="display: none;">
+                <!-- ═══════════════════════════════════════════ -->
+                <!-- NIVEL 1: MATEMÁTICA DEL MANÁ               -->
+                <!-- ═══════════════════════════════════════════ -->
+                <div class="forge-level forge-level-1">
+                    <div class="forge-level-header">
+                        <span class="forge-level-badge">Nivel 1</span>
+                        <h3>Matemática del Maná</h3>
+                    </div>
+                    
+                    <div class="forge-field">
+                        <label class="forge-label">Identidad de Color (WUBRG)</label>
+                        <div class="wubrg-row" id="forge-wubrg">
+                            <label class="wubrg-check wubrg-w" title="Blanco (White)">
+                                <input type="checkbox" name="forge-mana" value="W">
+                                <span class="wubrg-symbol">⚪</span>
+                                <span class="wubrg-name">W</span>
+                            </label>
+                            <label class="wubrg-check wubrg-u" title="Azul (Blue)">
+                                <input type="checkbox" name="forge-mana" value="U">
+                                <span class="wubrg-symbol">🔵</span>
+                                <span class="wubrg-name">U</span>
+                            </label>
+                            <label class="wubrg-check wubrg-b" title="Negro (Black)">
+                                <input type="checkbox" name="forge-mana" value="B">
+                                <span class="wubrg-symbol">⚫</span>
+                                <span class="wubrg-name">B</span>
+                            </label>
+                            <label class="wubrg-check wubrg-r" title="Rojo (Red)">
+                                <input type="checkbox" name="forge-mana" value="R">
+                                <span class="wubrg-symbol">🔴</span>
+                                <span class="wubrg-name">R</span>
+                            </label>
+                            <label class="wubrg-check wubrg-g" title="Verde (Green)">
+                                <input type="checkbox" name="forge-mana" value="G">
+                                <span class="wubrg-symbol">🟢</span>
+                                <span class="wubrg-name">G</span>
+                            </label>
+                            <label class="wubrg-check wubrg-c" title="Incoloro (Colorless)">
+                                <input type="checkbox" name="forge-mana" value="C">
+                                <span class="wubrg-symbol">⚙️</span>
+                                <span class="wubrg-name">C</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="forge-field">
+                        <label class="forge-label">Pureza del Maná</label>
+                        <select id="forge-mana-purity" class="forge-select">
+                            <option value="strict">🔒 Maná Estricto — Solo los colores elegidos</option>
+                            <option value="splash">🌊 Permitir Splash — Cartas útiles de otros colores</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- ═══════════════════════════════════════════ -->
+                <!-- NIVEL 2: FLAVOR / LLM SANDBOX (CORE)       -->
+                <!-- ═══════════════════════════════════════════ -->
+                <div class="forge-level forge-level-2">
+                    <div class="forge-level-header">
+                        <span class="forge-level-badge badge-creative">Nivel 2</span>
+                        <h3>Alma Creativa <span class="badge-llm">🧠 LLM Sandbox</span></h3>
+                    </div>
+
+                    <div class="forge-field">
+                        <label class="forge-label">Carta Clave / Sinergia Base del Mazo</label>
+                        <input type="text" id="forge-key-card" class="forge-input" placeholder="Ej: Lightning Bolt, Tarmogoyf, Splinter Twin...">
+                        <small class="forge-hint">La carta o combo central de tu estrategia. La IA construirá alrededor de ella.</small>
+                    </div>
+
+                    <div class="forge-field">
+                        <label class="forge-label">🎭 Lore, Estética y Narrativa <span class="forge-important">★ IMPORTANTÍSIMO</span></label>
+                        <textarea id="forge-lore" class="forge-textarea" rows="4" placeholder="Ej: Quiero piratas fantasmas victorianos cyberpunk que usen cañones de éter...&#10;Ej: Un ejército de ángeles caídos corrompidos por Phyrexia con estética biomecánica...&#10;Ej: Druidas elementales del bosque profundo que controlan la meteorología..."></textarea>
+                        <small class="forge-hint">Describe la fantasía, temática, tribu o historia que quieres que tu mazo represente. Cuanto más detallado, más precisa e inspirada será la IA.</small>
+                    </div>
+
+                    <div class="forge-field">
+                        <label class="forge-label">Arquetipo Estratégico Principal</label>
+                        <select id="forge-archetype" class="forge-select">
+                            <option value="aggro">⚔️ Aggro — Rápido y Letal (Turnos 3-5)</option>
+                            <option value="tempo">🗡️ Tempo — Esgrima de Ritmos (Turnos 5-7)</option>
+                            <option value="combo">🧩 Combo — Matemáticas Rotas (Turnos 4-6)</option>
+                            <option value="midrange">⚖️ Midrange — Adaptabilidad Brutal (Turnos 6-8)</option>
+                            <option value="control">🛡️ Control — Paciencia y Dictadura (Turnos 10+)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- ═══════════════════════════════════════════ -->
+                <!-- NIVEL 3: FILTROS AVANZADOS                  -->
+                <!-- ═══════════════════════════════════════════ -->
+                <div class="forge-level forge-level-3">
+                    <div class="forge-level-header">
+                        <span class="forge-level-badge badge-advanced">Nivel 3</span>
+                        <h3>Filtros Avanzados</h3>
+                    </div>
+
+                    <div class="forge-field">
+                        <label class="forge-label">Curva de Maná</label>
+                        <div class="forge-slider-container">
+                            <span class="slider-label-left">⚡ Híper rápido y barato</span>
+                            <input type="range" id="forge-mana-curve" class="forge-slider" min="1" max="5" value="3" step="1">
+                            <span class="slider-label-right">🏔️ Lento con Jefes pesados</span>
+                        </div>
+                        <div class="slider-ticks">
+                            <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span>
+                        </div>
+                        <div class="slider-value-display" id="forge-curve-display">Equilibrado (3/5)</div>
+                    </div>
+
+                    <div class="forge-field">
+                        <label class="forge-label">Nivel de Poder / Presupuesto</label>
+                        <select id="forge-power-level" class="forge-select">
+                            <option value="budget-commons">🪙 Solo Comunes Baratas — Presupuesto mínimo</option>
+                            <option value="budget-50">💰 Limitado a ~50$ — Competitivo accesible</option>
+                            <option value="mid-power">⚔️ Poder Medio — Sin restricciones absurdas</option>
+                            <option value="high-power" selected>🔥 Alto Poder — Raras y Míticas sin límite</option>
+                            <option value="cedh-mythic">💎 Roto / Mítico Ilimitado — CEDH / Legacy Power</option>
+                        </select>
+                    </div>
+
+                    <div class="forge-field">
+                        <label class="forge-label">Instrucción Extra (Opcional)</label>
+                        <input type="text" id="forge-extra" class="forge-input" placeholder="Ej: No incluir cartas baneadas en Modern, quiero 4x de Sol Ring...">
+                    </div>
+                </div>
+            </div>
+
+            <!-- BOTÓN FORJAR -->
+            <div class="forge-action">
+                <button id="btn-forge-deck" class="btn-forge">
+                    <span class="forge-btn-icon">🔨</span>
+                    <span>FORJAR MAZO</span>
+                    <span class="forge-btn-sparks">✨</span>
+                </button>
+                <p class="forge-action-hint">Tu mazo forjado se añadirá a la Battle Box, listo para generar con la IA.</p>
+            </div>
+            </div><!-- cierre de forge-body -->
+        </section>
+
         <section class="archetypes-nav" id="archetypes-nav">
             <!-- Botones gigantes renderizados por JS según el formato elegido -->
         </section>
