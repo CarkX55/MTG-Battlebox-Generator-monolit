@@ -538,18 +538,33 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (introVideo) {
         introVideo.muted = true; // Asegura que el navegador permita el autoplay
-        const firstVideo = videoFiles[currentVideoIndex];
-        introVideo.src = `${introVideoFolder}${firstVideo}`;
-        applyVideoFit(firstVideo);
-        introVideo.play();
         
-        // Bucle secuencial: al terminar un video, pasa al siguiente en orden circular
-        introVideo.addEventListener('ended', () => {
+        const playNextVideo = () => {
             currentVideoIndex = (currentVideoIndex + 1) % videoFiles.length;
             const nextVideo = videoFiles[currentVideoIndex];
+            console.log("🎞️ Cambiando a video:", nextVideo);
             introVideo.src = `${introVideoFolder}${nextVideo}`;
             applyVideoFit(nextVideo);
-            introVideo.play();
+            introVideo.load();
+            introVideo.play().catch(e => console.warn("Error al auto-reproducir:", e));
+        };
+
+        // Carga inicial
+        const firstVideo = videoFiles[currentVideoIndex];
+        console.log("🍿 Video inicial:", firstVideo);
+        introVideo.src = `${introVideoFolder}${firstVideo}`;
+        applyVideoFit(firstVideo);
+        introVideo.load();
+        introVideo.play().catch(e => console.warn("Error al iniciar video:", e));
+        
+        // Bucle secuencial: al terminar un video, pasa al siguiente
+        introVideo.addEventListener('ended', playNextVideo);
+
+        // Fallback: si hay error cargando un video (móvil, o formato no soportado), saltar al siguiente
+        introVideo.addEventListener('error', (e) => {
+            console.error("❌ Error cargando video:", videoFiles[currentVideoIndex], e);
+            // Intentar con el siguiente tras 1 seg para no entrar en bucle infinito instantáneo
+            setTimeout(playNextVideo, 1000);
         });
     }
 
