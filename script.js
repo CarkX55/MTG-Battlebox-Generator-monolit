@@ -520,18 +520,35 @@ document.addEventListener('DOMContentLoaded', () => {
     const introScreen = document.getElementById('intro-screen');
     const introVideo = document.getElementById('intro-video-bg');
     const introVideoFolder = 'videos/';
-    const videoFiles = ['Colors.webm', 'download (1).webm', 'download.webm']; 
+    const videoFiles = ['Colors.webm', 'download.webm', 'eldrazi.webm', 'hidra.webm'];
     
+    // Inicio aleatorio según petición del usuario (luego siguen el orden)
+    let currentVideoIndex = Math.floor(Math.random() * videoFiles.length);
+    
+    // Función para ajustar el fit según el video
+    function applyVideoFit(filename) {
+        if (!introVideo) return;
+        // Eldrazi e Hidra son verticales (mobile-ratio)
+        if (filename === 'eldrazi.webm' || filename === 'hidra.webm') {
+            introVideo.classList.add('vertical-video-fit');
+        } else {
+            introVideo.classList.remove('vertical-video-fit');
+        }
+    }
+
     if (introVideo) {
-        // El primero siempre es Colors.webm según petición del usuario
         introVideo.muted = true; // Asegura que el navegador permita el autoplay
-        introVideo.src = `${introVideoFolder}Colors.webm`;
+        const firstVideo = videoFiles[currentVideoIndex];
+        introVideo.src = `${introVideoFolder}${firstVideo}`;
+        applyVideoFit(firstVideo);
         introVideo.play();
         
-        // Lógica opcional: Cuando termine un video, poner uno aleatorio
+        // Bucle secuencial: al terminar un video, pasa al siguiente en orden circular
         introVideo.addEventListener('ended', () => {
-            const nextVideo = videoFiles[Math.floor(Math.random() * videoFiles.length)];
+            currentVideoIndex = (currentVideoIndex + 1) % videoFiles.length;
+            const nextVideo = videoFiles[currentVideoIndex];
             introVideo.src = `${introVideoFolder}${nextVideo}`;
+            applyVideoFit(nextVideo);
             introVideo.play();
         });
     }
@@ -614,16 +631,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <small style="color:var(--text-muted); font-size:0.8rem; display:block; margin-top:0.2rem;" id="tribal-hints"></small>
                 </div>
 
-                <div class="form-group">
-                    <label>Preferencia de Colores:</label>
-                    <select id="config-colors">
-                        <option value="Lo óptimo matemáticamente">Que la IA elija lo óptimo</option>
-                        <option value="Mono Color">Mono Color Puro</option>
-                        <option value="Bicolor (Dos colores)">Bicolor</option>
-                        <option value="Tricolor (Tres colores)">Tricolor</option>
-                        <option value="Incoloro (Artefactos/Eldrazi)">Incoloro / Sin color</option>
-                    </select>
-                </div>
+
 
                 <div class="form-group">
                     <label>Instrucción Extra (Opcional):</label>
@@ -641,7 +649,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const tribalContainer = document.getElementById('tribal-container');
     const configTribe = document.getElementById('config-tribe');
     const tribalHints = document.getElementById('tribal-hints');
-    const configColors = document.getElementById('config-colors');
+
     const configExtra = document.getElementById('config-extra');
     const btnSaveBB = document.getElementById('btn-save-bb');
     const modalDeckDisplay = document.getElementById('modal-deck-display');
@@ -813,11 +821,48 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function chooseFormat(format) {
         globalFormat = format;
-        introScreen.classList.add('intro-fade-out');
         
         // Mostrar/Ocultar La Forja Personalizada según formato
         const forgeBanner = document.getElementById('custom-forge-banner');
         
+        // === FASE 1: Animar monolitos (0ms) ===
+        const clickedBtn = format === 'standard' ? btnFormatStandard : btnFormatCommander;
+        const otherBtn = format === 'standard' ? btnFormatCommander : btnFormatStandard;
+        
+        // El monolito elegido vuela hacia la cámara
+        const clickedImg = clickedBtn.querySelector('img.monolith-asset');
+        const otherImg = otherBtn.querySelector('img.monolith-asset');
+        
+        if (clickedImg) clickedImg.classList.add('monolith-chosen');
+        if (otherImg) otherImg.classList.add('monolith-dismissed');
+        
+        // Desvanecer título y subtítulo
+        const introContent = document.querySelector('.intro-content');
+        if (introContent) {
+            introContent.style.transition = 'opacity 0.8s ease-out';
+            introContent.style.opacity = '0';
+        }
+        
+        // === FASE 2: Flash de luz blanca (500ms) ===
+        setTimeout(() => {
+            const flash = document.createElement('div');
+            flash.className = 'intro-flash';
+            document.body.appendChild(flash);
+            
+            // Limpiar el flash del DOM después de que termine
+            setTimeout(() => flash.remove(), 1500);
+        }, 600);
+        
+        // === FASE 3: Disolver la intro screen (1200ms) ===
+        setTimeout(() => {
+            introScreen.classList.add('intro-fade-out');
+            // Pequeño delay para que la clase transition se aplique, luego trigger opacity 0
+            requestAnimationFrame(() => {
+                introScreen.classList.add('phase-dissolve');
+            });
+        }, 1200);
+        
+        // === FASE 4: Ocultar intro y mostrar home (2800ms) ===
         setTimeout(() => {
             introScreen.style.display = 'none';
             if (animationFrameId) cancelAnimationFrame(animationFrameId);
@@ -829,7 +874,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 renderHomeDoors(mtgDatabase);
                 if (forgeBanner) forgeBanner.style.display = 'block';
             }
-        }, 2500); // 2.5s para la disipación épica de la IA de Stitch
+        }, 2800);
     }
 
     if (btnFormatStandard) btnFormatStandard.addEventListener('click', () => chooseFormat('standard'));
@@ -908,7 +953,7 @@ document.addEventListener('DOMContentLoaded', () => {
             subArchetype: activeSelection.deckName,
             format: activeSelection.format, // 🔥 NUEVO: Persistimos el formato
             tribe: tribalContainer.style.display !== 'none' ? configTribe.value.trim() : 'N/A',
-            colorsFreq: configColors.value,
+            colorsFreq: activeSelection.deckColors || 'Predeterminado',
             extraNotes: configExtra.value.trim()
         };
 
@@ -1101,13 +1146,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 const dk = db[k];
                 const item = dk.decks[i];
                 
-                activeSelection = { archName: dk.title, deckName: item.name, format: globalFormat };
+                activeSelection = { archName: dk.title, deckName: item.name, format: globalFormat, deckColors: item.colors };
                 
                 modalDeckDisplay.textContent = `${item.name}`;
                 modalDeckDisplay.style.color = item.theme;
                 
                 configExtra.value = "";
-                configColors.value = "Lo óptimo matemáticamente";
                 
                 if (item.tribal) {
                     tribalContainer.style.display = "block";
@@ -1566,9 +1610,11 @@ ${isCommander ? '- REGLA CRÍTICA EDH: Mazo de 100 cartas (1 Comandante + 99 car
 4. ESTRUCTURA: Los mazos DEBEN separarse claramente con "---".
 5. CABECERA: La PRIMERA LÍNEA de cada mazo debe ser su nombre seguido de sus iconos de color (ej: # Goblins Rojo-Verde 🔴🟢).`;
 
-            // UI Feedback
+            // UI Feedback — Skeleton Loading AAA
             aiStatus.style.display = 'block';
-            aiResults.style.display = 'none';
+            aiResults.innerHTML = '<div class="skeleton-line" style="width:60%"></div><div class="skeleton-line" style="width:85%"></div><div class="skeleton-line" style="width:70%"></div><div class="skeleton-line" style="width:90%"></div><div class="skeleton-line" style="width:50%"></div>';
+            aiResults.style.display = 'block';
+            aiResults.classList.add('skeleton-loading');
             btnAiGen.disabled = true;
             btnAiGen.style.opacity = '0.5';
 
@@ -1637,6 +1683,7 @@ ${isCommander ? '- REGLA CRÍTICA EDH: Mazo de 100 cartas (1 Comandante + 99 car
                 viewControls.style.display = 'none';
             } finally {
                 aiStatus.style.display = 'none';
+                aiResults.classList.remove('skeleton-loading');
                 btnAiGen.disabled = false;
                 btnAiGen.style.opacity = '1';
             }
@@ -1789,6 +1836,401 @@ ${isCommander ? '- REGLA CRÍTICA EDH: Mazo de 100 cartas (1 Comandante + 99 car
             const text = encodeURIComponent("¡Echa un vistazo a estos mazos equilibrados de MTG generados!\n\n" + lastAiResponse);
             window.open(`https://t.me/share/url?url=&text=${text}`, '_blank');
         });
+    }
+
+    // --- GUÍA DE BOLSILLO: Pocket Guide Print System ---
+    const btnPocketGuide = document.getElementById('btn-pocket-guide');
+    
+    if (btnPocketGuide) {
+        btnPocketGuide.addEventListener('click', () => {
+            if (!lastAiResponse) return;
+            generarGuiaDeBolsillo(lastAiResponse);
+        });
+    }
+
+    function parseDeckForGuide(chunkRaw) {
+        const lines = chunkRaw.trim().split('\n');
+        
+        // Utilidad: limpiar markdown crudo
+        function cleanMd(text) {
+            return text
+                .replace(/\[\[(.*?)\|(.*?)\]\]/g, '$1')  // [[Card|R]] → Card
+                .replace(/\[\[(.*?)\]\]/g, '$1')           // [[Card]] → Card
+                .replace(/\*\*(.*?)\*\*/g, '$1')           // **bold** → bold
+                .replace(/\*(.*?)\*/g, '$1')               // *italic* → italic
+                .replace(/^#+\s*/gm, '')                    // ## Header → Header
+                .replace(/^\s*[-*]\s+/gm, '• ')            // - item → • item
+                .trim();
+        }
+
+        // --- Extraer nombre del mazo (primera línea con # o primer **bold**) ---
+        let deckName = '';
+        let deckColors = '';
+        // Regex amplio para emojis de color MTG (círculos de colores, etc.)
+        const emojiColorRegex = /[\u{1F534}\u{1F535}\u{26AB}\u{1F7E2}\u{26AA}\u{1F7E0}\u{1F7E1}\u{2B1B}\u{1F7E3}\u{1F7E4}\u{2B55}\u{1F7E5}\u{1F7E6}\u{1F7E7}\u{1F7E8}\u{1F7E9}]/gu;
+        
+        for (const line of lines) {
+            const trimmed = line.trim();
+            // Buscar # Heading
+            if (trimmed.startsWith('#')) {
+                const cleaned = trimmed.replace(/^#+\s*/, '').trim();
+                const emojis = cleaned.match(emojiColorRegex);
+                if (emojis) deckColors = emojis.join(' ');
+                deckName = cleaned.replace(emojiColorRegex, '').trim();
+                break;
+            }
+        }
+        // Fallback: buscar primera línea en **bold** que parezca un nombre de mazo
+        if (!deckName) {
+            const boldMatch = chunkRaw.match(/\*\*([^*]{5,60})\*\*/);
+            if (boldMatch) {
+                const cleaned = boldMatch[1].trim();
+                const emojis = cleaned.match(emojiColorRegex);
+                if (emojis) deckColors = emojis.join(' ');
+                deckName = cleaned.replace(emojiColorRegex, '').trim();
+            }
+        }
+        if (!deckName) deckName = 'Mazo Generado';
+
+        // --- Extraer TODAS las cartas con rareza ---
+        const keyCards = [];
+        const allCards = [];
+        const cardPattern = /\[\[(.*?)\|(.*?)\]\]/g;
+        let match;
+        while ((match = cardPattern.exec(chunkRaw)) !== null) {
+            const name = match[1].trim();
+            const rarity = match[2].trim().toUpperCase();
+            allCards.push({ name, rarity });
+            if (rarity === 'R' || rarity === 'M') {
+                keyCards.push({ name, rarity });
+            }
+        }
+
+        // --- Contar cartas por cantidad (1x, 2x, etc.) ---
+        let totalCardCount = 0;
+        const qtyPattern = /^(\d+)\s*x?\s*\[\[/gm;
+        let qtyMatch;
+        while ((qtyMatch = qtyPattern.exec(chunkRaw)) !== null) {
+            totalCardCount += parseInt(qtyMatch[1]);
+        }
+        if (totalCardCount === 0) totalCardCount = allCards.length;
+
+        // --- Extraer secciones estratégicas del texto ---
+        let strategy = '';
+        let winCon = '';
+        let tips = [];
+        
+        // Patrones más amplios y permisivos para capturar texto de la IA
+        const strategyPatterns = [
+            /#{1,3}\s*(?:estrategia|strategy|plan de juego|game\s*plan|objetivo|cómo funciona|how it works)[:\s]*([\s\S]*?)(?=\n#{1,3}\s|$)/i,
+            /\*\*(?:estrategia|strategy|plan de juego|objetivo)[:\s]*\*\*\s*([\s\S]*?)(?=\n\*\*|\n#{1,3}|\n\n\n|$)/i,
+            /(?:^|\n)(?:estrategia|este mazo busca|la estrategia|el objetivo)[:\s]+([\s\S]*?)(?=\n\n|\n\*\*|\n#{1,3}|$)/im
+        ];
+        for (const pat of strategyPatterns) {
+            const m = chunkRaw.match(pat);
+            if (m && m[1].trim().length > 15) {
+                strategy = cleanMd(m[1].trim().split('\n').filter(l => l.trim()).slice(0, 4).join(' ')).substring(0, 250);
+                break;
+            }
+        }
+
+        // Condición de victoria
+        const winConPatterns = [
+            /#{1,3}\s*(?:condici[oó]n de victoria|win\s*con(?:dition)?|cómo ganar|victoria)[:\s]*([\s\S]*?)(?=\n#{1,3}\s|$)/i,
+            /\*\*(?:condici[oó]n de victoria|win\s*con|cómo ganar|victoria)[:\s]*\*\*\s*([\s\S]*?)(?=\n\*\*|\n#{1,3}|\n\n\n|$)/i
+        ];
+        for (const pat of winConPatterns) {
+            const m = chunkRaw.match(pat);
+            if (m && m[1].trim().length > 10) {
+                winCon = cleanMd(m[1].trim().split('\n').filter(l => l.trim()).slice(0, 3).join(' ')).substring(0, 200);
+                break;
+            }
+        }
+
+        // Sinergias / Tips / Combos
+        const tipsPatterns = [
+            /#{1,3}\s*(?:sinergias?|combos?|interacciones? clave|tips?|notas?)[:\s]*([\s\S]*?)(?=\n#{1,3}\s|$)/i,
+            /\*\*(?:sinergias?|combos?|interacciones?|notas? del diseñador)[:\s]*\*\*\s*([\s\S]*?)(?=\n\*\*|\n#{1,3}|\n\n\n|$)/i
+        ];
+        for (const pat of tipsPatterns) {
+            const m = chunkRaw.match(pat);
+            if (m && m[1].trim().length > 10) {
+                tips.push(cleanMd(m[1].trim().split('\n').filter(l => l.trim()).slice(0, 3).join(' ')).substring(0, 200));
+                break;
+            }
+        }
+
+        // --- Fallback inteligente si no encontró secciones explícitas ---
+        if (!strategy && allCards.length > 0) {
+            // Construir una descripción desde los datos disponibles
+            const creatures = allCards.filter(() => true); // Todas las cartas encontradas
+            const mythics = allCards.filter(c => c.rarity === 'M');
+            const rares = allCards.filter(c => c.rarity === 'R');
+            
+            let desc = `Mazo ${deckName}`;
+            if (deckColors) desc += ` (${deckColors})`;
+            desc += ` con ${totalCardCount} cartas.`;
+            if (mythics.length > 0) desc += ` ${mythics.length} míticas: ${mythics.slice(0, 2).map(c => c.name).join(', ')}.`;
+            if (rares.length > 0) desc += ` ${rares.length} raras destacadas.`;
+            strategy = desc;
+        } else if (!strategy) {
+            // Último recurso: usar las primeras líneas legibles del chunk
+            const readableLines = lines.filter(l => {
+                const t = l.trim();
+                return t.length > 20 && !t.startsWith('#') && !/^\d+\s*x?\s*\[\[/.test(t);
+            });
+            if (readableLines.length > 0) {
+                strategy = cleanMd(readableLines.slice(0, 3).join(' ')).substring(0, 250);
+            } else {
+                strategy = `Consulta la lista completa de cartas para entender las sinergias de ${deckName}.`;
+            }
+        }
+
+        if (!winCon && keyCards.length > 0) {
+            winCon = `Cartas ganadoras: ${keyCards.slice(0, 3).map(c => c.name).join(', ')}.`;
+        }
+
+        // --- Extraer categorías (Criaturas, Hechizos, Tierras, etc.) ---
+        const categories = [];
+        const categoryRegex = /\*\*([^*]+)\*\*\s*(?:\((\d+)\))?/g;
+        let catMatch;
+        while ((catMatch = categoryRegex.exec(chunkRaw)) !== null) {
+            const catName = catMatch[1].trim();
+            const count = catMatch[2] || '';
+            if (catName.length > 3 && catName.length < 45 && !/\[\[/.test(catName) && !/^\d/.test(catName)) {
+                categories.push({ name: catName, count });
+            }
+        }
+
+        // --- Generar GUÍA DE USO del mazo ---
+        let playGuide = [];
+
+        // Primero intentar extraer del texto de la IA
+        const playPatterns = [
+            /#{1,3}\s*(?:cómo jugar|how to play|guía de juego|plan de juego|game\s*plan|primeros turnos|early game)[:\s]*([\s\S]*?)(?=\n#{1,3}\s|$)/i,
+            /\*\*(?:cómo jugar|how to play|guía|plan de juego|primeros turnos)[:\s]*\*\*\s*([\s\S]*?)(?=\n\*\*|\n#{1,3}|\n\n\n|$)/i
+        ];
+        for (const pat of playPatterns) {
+            const m = chunkRaw.match(pat);
+            if (m && m[1].trim().length > 20) {
+                const extractedSteps = m[1].trim().split('\n')
+                    .filter(l => l.trim().length > 5)
+                    .slice(0, 5)
+                    .map(l => cleanMd(l));
+                if (extractedSteps.length > 0) playGuide = extractedSteps;
+                break;
+            }
+        }
+
+        // Si la IA no incluyó guía, generarla automáticamente por arquetipo
+        if (playGuide.length === 0) {
+            const textLower = chunkRaw.toLowerCase();
+            const catText = categories.map(c => c.name.toLowerCase()).join(' ');
+            const allCardNames = allCards.map(c => c.name.toLowerCase()).join(' ');
+
+            // Detectar arquetipo
+            let archetype = 'midrange'; // default
+            const aggroWords = ['aggro', 'agresiv', 'rápid', 'burn', 'haste', 'goblin', 'sligh', 'red deck', 'rush'];
+            const controlWords = ['control', 'counter', 'removal', 'wrath', 'sweeper', 'draw', 'planeswalker', 'superfriend'];
+            const comboWords = ['combo', 'infinit', 'loop', 'storm', 'combo pieces', 'sinergia explosiva'];
+            const tribalWords = ['tribal', 'tribu', 'lord', 'señor', 'slivers', 'elves', 'goblin', 'zombie', 'merfolk', 'vampire', 'werewol', 'dinosaur', 'dragon'];
+            const midrangeWords = ['midrange', 'valor', 'value', 'ramp', 'curva', 'flexible'];
+            const reanimatorWords = ['reanimate', 'graveyard', 'cementerio', 'reanimar', 'discard'];
+
+            if (aggroWords.some(w => textLower.includes(w) || catText.includes(w))) archetype = 'aggro';
+            else if (controlWords.some(w => textLower.includes(w) || catText.includes(w) || allCardNames.includes(w))) archetype = 'control';
+            else if (comboWords.some(w => textLower.includes(w) || catText.includes(w))) archetype = 'combo';
+            else if (reanimatorWords.some(w => textLower.includes(w) || catText.includes(w))) archetype = 'reanimator';
+            else if (tribalWords.some(w => textLower.includes(w) || catText.includes(w) || allCardNames.includes(w))) archetype = 'tribal';
+            else if (midrangeWords.some(w => textLower.includes(w) || catText.includes(w))) archetype = 'midrange';
+
+            // Detectar si tiene planeswalkers
+            const hasPW = /planeswalker/i.test(catText) || /superfriend/i.test(textLower);
+            // Detectar si tiene ramp
+            const hasRamp = /ramp|mana dork|aceler/i.test(textLower);
+
+            const topCards = keyCards.slice(0, 2).map(c => c.name).join(' y ');
+
+            const guidesByArchetype = {
+                aggro: [
+                    `🏁 Mulligan: Busca mano con 1-2 tierras y criaturas de coste 1-2.`,
+                    `⚡ T1-T2: Despliega criaturas baratas. No guardes nada, presiona desde el primer turno.`,
+                    `🗡️ T3-T4: Ataca con todo. Usa combat tricks o burn para apartar bloqueadores.`,
+                    `⚠️ Si llegas a T5+ sin ventaja, estás perdiendo. Busca cerrar antes.`,
+                    `💡 Tu rol SIEMPRE es el agresor. No juegues defensivo.`
+                ],
+                control: [
+                    `🏁 Mulligan: Busca tierras suficientes (3+), al menos 1 removal y 1 fuente de robo.`,
+                    `🛡️ T1-T3: Juega tierras, deja mana abierto. Reacciona a lo que haga el rival.`,
+                    `🔄 T4-T5: Estabiliza con sweepers o removals. No gastes respuestas en amenazas menores.`,
+                    `👑 T6+: Despliega tus finishers${topCards ? ` (${topCards})` : ''}. Ya controlas la partida.`,
+                    `💡 Paciencia. Tu mazo gana en late-game. Cada carta del rival que neutralizas es una victoria.`
+                ],
+                combo: [
+                    `🏁 Mulligan: Busca piezas clave del combo o tutores/robo para encontrarlas.`,
+                    `🔍 T1-T3: Roba, filtra y busca tus piezas. Protege tu mano con descarte si puedes.`,
+                    `⚡ T4-T5: Ejecuta el combo cuando tengas todas las piezas y protección.`,
+                    `⚠️ No ataques ni te expongas: tu plan es combo, no daño de combate.`,
+                    `💡 Si te destruyen una pieza, busca plan B o recursión.`
+                ],
+                tribal: [
+                    `🏁 Mulligan: Busca 2-3 tierras, un lord/señor tribal y criaturas de la tribu.`,
+                    `👥 T1-T3: Desarrolla tu board con criaturas de la tribu. Prioriza lords que bufeen a todos.`,
+                    `🗡️ T3-T5: Ataca con la tribu al completo. Los lords hacen que cada criatura sea una amenaza.`,
+                    `🔄 T5+: Si te hacen sweeper, reconstruye rápido. Guarda algún recurso para recuperarte.`,
+                    `💡 La fuerza está en el número. No cambies tus criaturas 1x1 a menos que sea vital.`
+                ],
+                reanimator: [
+                    `🏁 Mulligan: Busca descartes/loot effects y al menos 1 criatura grande para reanimar.`,
+                    `🪦 T1-T2: Llena tu cementerio. Descarta criaturas grandes con looters o hechizos.`,
+                    `💀 T3-T4: Reanima tu mejor criatura. El tempo de sacar algo enorme tan pronto es devastador.`,
+                    `🛡️ T5+: Protege tu criatura reanimada. Si la exilian, repite el proceso.`,
+                    `💡 Tu cementerio es tu segunda mano. Trátalo como un recurso valioso.`
+                ],
+                midrange: [
+                    `🏁 Mulligan: Busca una curva suave (T2→T3→T4). Evita manos de solo tierras o solo hechizos.`,
+                    `${hasRamp ? '🌱 T1-T2: Acelera con ramp/dorks. Llegar antes a tu curva media es clave.' : '🔄 T1-T2: Juega criaturas de valor o removal si es necesario.'}`,
+                    `💪 T3-T5: Despliega tus amenazas principales${topCards ? ` (${topCards})` : ''}. Cada carta debe generar ventaja.`,
+                    `${hasPW ? '👑 Protege tus planeswalkers. Son tu motor de ventaja incremental.' : '⚔️ Adapta tu rol: agresor contra control, defensor contra aggro.'}`,
+                    `💡 Ganas por calidad de cartas, no cantidad. Cada intercambio 2x1 a tu favor te acerca a la victoria.`
+                ]
+            };
+
+            playGuide = guidesByArchetype[archetype] || guidesByArchetype.midrange;
+        }
+
+        return { deckName, deckColors, keyCards, strategy, winCon, tips, categories, totalCards: totalCardCount, playGuide };
+    }
+
+    function generarGuiaDeBolsillo(rawResponse) {
+        // Eliminar overlay anterior si existe
+        const existing = document.querySelector('.pocket-overlay');
+        if (existing) existing.remove();
+
+        // FILTRO CRÍTICO: solo chunks que contengan listas de cartas reales [[Card|R]]
+        const chunks = rawResponse.split('---')
+            .filter(c => c.trim().length > 10)
+            .filter(c => /\[\[.+?\|[CURM]\]\]/i.test(c));
+        
+        let cardsHtml = '';
+        chunks.forEach(chunk => {
+            const deck = parseDeckForGuide(chunk);
+            
+            // Construir tarjetas clave HTML
+            let keyCardsHtml = '';
+            if (deck.keyCards.length > 0) {
+                keyCardsHtml = `<div class="pocket-key-cards">`;
+                deck.keyCards.slice(0, 8).forEach(card => {
+                    const icon = card.rarity === 'M' ? '🔶' : '💎';
+                    keyCardsHtml += `<span class="pocket-key-card">${icon} ${card.name}</span>`;
+                });
+                keyCardsHtml += `</div>`;
+            }
+
+            // Construir sección de categorías si las hay
+            let categoriesHtml = '';
+            if (deck.categories.length > 0) {
+                categoriesHtml = `
+                    <div class="pocket-section">
+                        <div class="pocket-section-title">📊 Distribución</div>
+                        <p>${deck.categories.slice(0, 5).map(c => `${c.name}${c.count ? ' (' + c.count + ')' : ''}`).join(' • ')}</p>
+                    </div>`;
+            }
+
+            // Construir tips si los hay
+            let tipsHtml = '';
+            if (deck.tips.length > 0) {
+                tipsHtml = `
+                    <div class="pocket-section">
+                        <div class="pocket-section-title">💡 Sinergias Clave</div>
+                        <p>${deck.tips[0]}</p>
+                    </div>`;
+            }
+
+            // Construir guía de juego
+            let playGuideHtml = '';
+            if (deck.playGuide.length > 0) {
+                playGuideHtml = `
+                    <div class="pocket-section">
+                        <div class="pocket-section-title">🎮 Cómo Jugar</div>
+                        <ul class="pocket-play-steps">
+                            ${deck.playGuide.map(step => `<li>${step}</li>`).join('')}
+                        </ul>
+                    </div>`;
+            }
+
+            cardsHtml += `
+                <div class="pocket-card">
+                    <div class="pocket-deck-name">${deck.deckName}</div>
+                    <div class="pocket-deck-colors">${deck.deckColors}</div>
+                    <div class="pocket-divider"></div>
+                    
+                    <div class="pocket-section">
+                        <div class="pocket-section-title">⚔️ Estrategia</div>
+                        <p>${deck.strategy}</p>
+                    </div>
+
+                    ${playGuideHtml}
+
+                    ${deck.winCon ? `
+                    <div class="pocket-section">
+                        <div class="pocket-section-title">🏆 Condición de Victoria</div>
+                        <p>${deck.winCon}</p>
+                    </div>` : ''}
+
+                    ${categoriesHtml}
+                    ${tipsHtml}
+                    
+                    ${keyCardsHtml ? `
+                    <div class="pocket-section">
+                        <div class="pocket-section-title">⭐ Cartas Estrella</div>
+                        ${keyCardsHtml}
+                    </div>` : ''}
+                    
+                    <div class="pocket-divider"></div>
+                    <div class="pocket-footer">Battle Box • ${deck.totalCards} cartas</div>
+                </div>
+            `;
+        });
+
+        const overlayHtml = `
+            <div class="pocket-overlay active">
+                <div class="pocket-container">
+                    <div class="pocket-header">
+                        <h2>📄 Guía de Bolsillo</h2>
+                        <p>Imprime, recorta por las líneas de corte, dobla y mete cada guía en una funda de carta.</p>
+                        <div class="pocket-actions">
+                            <button class="btn-pocket-print" onclick="window.print()">🖨️ Imprimir</button>
+                            <button class="btn-pocket-close">✕ Cerrar</button>
+                        </div>
+                    </div>
+                    <div class="pocket-guide-grid">
+                        ${cardsHtml}
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', overlayHtml);
+
+        // Listener para cerrar
+        const overlay = document.querySelector('.pocket-overlay');
+        const btnClose = overlay.querySelector('.btn-pocket-close');
+        
+        btnClose.addEventListener('click', () => {
+            overlay.classList.remove('active');
+            setTimeout(() => overlay.remove(), 400);
+        });
+
+        // Cerrar con ESC
+        const escHandler = (e) => {
+            if (e.key === 'Escape') {
+                overlay.classList.remove('active');
+                setTimeout(() => overlay.remove(), 400);
+                document.removeEventListener('keydown', escHandler);
+            }
+        };
+        document.addEventListener('keydown', escHandler);
     }
 
     // Lógica del Hover de Scryfall
@@ -2003,7 +2445,9 @@ ${contextoParaElJuez}
 3. **El Veredicto (Quirúrgico)**: Propón EXACTAMENTE de 3 a 5 cambios de cartas MUY ESPECÍFICOS para equilibrarlos.
 Haz tu respuesta limpia, estéticamente agradable e innegable.`;
 
-            judgeVerdict.style.display = 'none';
+            judgeVerdict.innerHTML = '<div class="skeleton-line" style="width:80%"></div><div class="skeleton-line" style="width:60%"></div><div class="skeleton-line" style="width:90%"></div><div class="skeleton-line" style="width:55%"></div>';
+            judgeVerdict.style.display = 'block';
+            judgeVerdict.classList.add('skeleton-loading');
             judgeLoader.style.display = 'block';
             btnJudge.disabled = true;
 
@@ -2030,6 +2474,7 @@ Haz tu respuesta limpia, estéticamente agradable e innegable.`;
                 judgeVerdict.style.display = 'block';
             } finally {
                 judgeLoader.style.display = 'none';
+                judgeVerdict.classList.remove('skeleton-loading');
                 btnJudge.disabled = false;
                 setTimeout(() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }), 100);
             }
@@ -2142,7 +2587,9 @@ Haz tu respuesta limpia, estéticamente agradable e innegable.`;
     async function renderCommunityBox() {
         const loader = document.getElementById('community-loader');
         const listDiv = document.getElementById('community-list');
-        listDiv.style.display = 'none';
+        listDiv.innerHTML = '<div class="skeleton-line" style="width:70%"></div><div class="skeleton-line" style="width:50%"></div><div class="skeleton-line" style="width:80%"></div>';
+        listDiv.style.display = 'block';
+        listDiv.classList.add('skeleton-loading');
         loader.style.display = 'block';
 
         try {
@@ -2280,11 +2727,13 @@ Haz tu respuesta limpia, estéticamente agradable e innegable.`;
             });
 
             loader.style.display = 'none';
+            listDiv.classList.remove('skeleton-loading');
             listDiv.style.display = 'block';
             
         } catch(err) {
             console.error("Error consiguiendo docs", err);
             loader.style.display = 'none';
+            listDiv.classList.remove('skeleton-loading');
             listDiv.style.display = 'block';
             listDiv.innerHTML = `<div class="empty-bb" style="color: #ef4444; border-color: #ef4444;">❌ Error contactando con Firebase. Contacta con el administrador.</div>`;
         }
