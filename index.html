@@ -35,11 +35,15 @@
         Bóveda Comunidad
     </button>
 
+    <button id="btn-cinema-mode" class="floating-btn cinema-toggle" style="top: 2rem; left: 2rem; right: auto; width: 3.5rem; height: 3.5rem; border-radius: 50%; padding: 0; justify-content: center; font-size: 1.4rem;" title="Modo Cine (Focus Video)">
+        🎬
+    </button>
+
+    <!-- Fondo de video dinámico Global -->
+    <video id="intro-video-bg" autoplay muted playsinline></video>
+
     <!-- PANTALLA CERO: Selección de Formato y Portal de Entrada Épico -->
     <main id="intro-screen" class="intro-overlay">
-        <!-- Fondo de video dinámico -->
-        <video id="intro-video-bg" autoplay muted playsinline></video>
-        
         <!-- Canvas para renderizar sistema de partículas (Humo y Chispas mágicas) -->
         <canvas id="epic-canvas"></canvas>
         <div class="intro-content">
@@ -211,18 +215,16 @@
                         <input type="text" id="forge-extra" class="forge-input" placeholder="Ej: No incluir cartas baneadas en Modern, quiero 4x de Sol Ring...">
                     </div>
                 </div>
-            </div>
 
-            <!-- BOTÓN FORJAR -->
-            <div class="forge-action">
-                <button id="btn-forge-deck" class="btn-forge">
-                    <span class="forge-btn-icon">🔨</span>
-                    <span>FORJAR MAZO</span>
-                    <span class="forge-btn-sparks">✨</span>
-                </button>
-                <p class="forge-action-hint">Tu mazo forjado se añadirá a la Battle Box, listo para generar con la IA.</p>
-            </div>
-            </div><!-- cierre de forge-body -->
+                    <div class="forge-action">
+                        <button id="btn-forge-deck" class="btn-forge">
+                            <span class="forge-btn-icon">🔨</span>
+                            <span>FORJAR MAZO</span>
+                            <span class="forge-btn-sparks">✨</span>
+                        </button>
+                        <p class="forge-action-hint">Tu mazo forjado se añadirá a la Battle Box, listo para generar con la IA.</p>
+                    </div>
+                </div><!-- cierre de forge-body -->
         </section>
 
         <section class="archetypes-nav" id="archetypes-nav">
@@ -317,14 +319,11 @@
                 <button id="btn-pocket-guide" style="padding: 0.5rem 1.2rem; border-radius: 20px; border: 1px solid #a855f7; background: rgba(168, 85, 247, 0.2); color: white; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem;" title="Generar guía imprimible tamaño funda de carta para cada mazo">
                     📄 Guía de Bolsillo
                 </button>
+                <button id="btn-export-proxys" style="padding: 0.5rem 1.2rem; border-radius: 20px; border: 1px solid #f59e0b; background: rgba(245, 158, 11, 0.2); color: white; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem;" title="Generar listado de texto para webs de impresión de Proxys">
+                    🧬 Listado Proxys
+                </button>
                 <button id="btn-publish-community" style="padding: 0.5rem 1.2rem; border-radius: 20px; border: 1px solid #3b82f6; background: rgba(59, 130, 246, 0.2); color: white; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem;" title="Subir a la nube para que toda la comunidad pueda verlo">
                     🌐 Publicar Online
-                </button>
-                <button id="btn-share-whatsapp" style="padding: 0.5rem 1.2rem; border-radius: 20px; border: 1px solid #25D366; background: rgba(37, 211, 102, 0.2); color: white; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem;" title="Enviar listas completas por WhatsApp">
-                    📲 WhatsApp
-                </button>
-                <button id="btn-share-telegram" style="padding: 0.5rem 1.2rem; border-radius: 20px; border: 1px solid #0088cc; background: rgba(0, 136, 204, 0.2); color: white; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem;" title="Enviar listas completas por Telegram">
-                    ✈️ Telegram
                 </button>
             </div>
             

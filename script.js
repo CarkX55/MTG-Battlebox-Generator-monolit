@@ -520,28 +520,34 @@ document.addEventListener('DOMContentLoaded', () => {
     const introScreen = document.getElementById('intro-screen');
     const introVideo = document.getElementById('intro-video-bg');
     const introVideoFolder = 'videos/';
-    const videoFiles = ['Colors.webm', 'download.webm', 'eldrazi.webm', 'hidra.webm'];
+    const introPool = ['Fridge.webm', 'Colors.webm'];
+    const mainPool = [
+        'Dragon-god_on_throne_202604131527.webm', 
+        'Eldritch_titan_storm_202604131522.webm', 
+        'download.webm', 
+        'eldrazi.webm', 
+        'hidra.webm'
+    ];
     
-    // Inicio aleatorio según petición del usuario (luego siguen el orden)
-    let currentVideoIndex = Math.floor(Math.random() * videoFiles.length);
+    let currentPool = introPool;
+    let currentVideoIndex = 0;
+    document.body.classList.add('on-intro'); // Estado inicial
     
     // Función para ajustar el fit según el video
     function applyVideoFit(filename) {
         if (!introVideo) return;
-        // Eldrazi e Hidra son verticales (mobile-ratio)
-        if (filename === 'eldrazi.webm' || filename === 'hidra.webm') {
-            introVideo.classList.add('vertical-video-fit');
-        } else {
-            introVideo.classList.remove('vertical-video-fit');
-        }
+        // Ahora que usamos 'contain' en PC por defecto en el CSS, 
+        // ya no hace falta añadir clases manuales de fit por JS.
     }
+
+    let playNextVideo;
 
     if (introVideo) {
         introVideo.muted = true; // Asegura que el navegador permita el autoplay
         
-        const playNextVideo = () => {
-            currentVideoIndex = (currentVideoIndex + 1) % videoFiles.length;
-            const nextVideo = videoFiles[currentVideoIndex];
+        playNextVideo = () => {
+            currentVideoIndex = (currentVideoIndex + 1) % currentPool.length;
+            const nextVideo = currentPool[currentVideoIndex];
             console.log("🎞️ Cambiando a video:", nextVideo);
             introVideo.src = `${introVideoFolder}${nextVideo}`;
             applyVideoFit(nextVideo);
@@ -550,7 +556,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         // Carga inicial
-        const firstVideo = videoFiles[currentVideoIndex];
+        const firstVideo = currentPool[currentVideoIndex];
         console.log("🍿 Video inicial:", firstVideo);
         introVideo.src = `${introVideoFolder}${firstVideo}`;
         applyVideoFit(firstVideo);
@@ -560,10 +566,9 @@ document.addEventListener('DOMContentLoaded', () => {
         // Bucle secuencial: al terminar un video, pasa al siguiente
         introVideo.addEventListener('ended', playNextVideo);
 
-        // Fallback: si hay error cargando un video (móvil, o formato no soportado), saltar al siguiente
+        // Fallback: si hay error cargando un video
         introVideo.addEventListener('error', (e) => {
-            console.error("❌ Error cargando video:", videoFiles[currentVideoIndex], e);
-            // Intentar con el siguiente tras 1 seg para no entrar en bucle infinito instantáneo
+            console.error("❌ Error cargando video:", currentPool[currentVideoIndex], e);
             setTimeout(playNextVideo, 1000);
         });
     }
@@ -602,6 +607,83 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Variables globales accesibles por todos los módulos (incluyendo el Tribunal Superior)
     let lastAiResponse = ""; // 🧠 Memoria compartida para la respuesta IA
+
+    // --- 🔮 SISTEMA DE TOOLTIPS CON CACHÉ Y DELEGACIÓN (OPTIMIZADO) ---
+    const scryfallCache = new Map();
+    const tooltip = document.getElementById('mtg-tooltip');
+    const tooltipImg = document.getElementById('mtg-tooltip-img');
+
+    document.body.addEventListener('mouseover', async (e) => {
+        const card = e.target.closest('.mtg-card');
+        if (!card) return;
+
+        const cardName = card.getAttribute('data-card');
+        if (!cardName) return;
+
+        tooltip.style.display = 'block';
+        tooltip.style.opacity = "0";
+        setTimeout(() => tooltip.style.opacity = "1", 50);
+
+        if (scryfallCache.has(cardName)) {
+            tooltipImg.src = scryfallCache.get(cardName);
+            return;
+        }
+
+        tooltipImg.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
+
+        try {
+            const res = await fetch(`https://api.scryfall.com/cards/named?exact=${encodeURIComponent(cardName)}`);
+            let cardData;
+            if (res.ok) {
+                cardData = await res.json();
+            } else {
+                const resFuzzy = await fetch(`https://api.scryfall.com/cards/named?fuzzy=${encodeURIComponent(cardName)}`);
+                if (resFuzzy.ok) cardData = await resFuzzy.json();
+            }
+
+            if (cardData) {
+                let imgUrl = "";
+                if (cardData.image_uris && cardData.image_uris.normal) {
+                    imgUrl = cardData.image_uris.normal;
+                } else if (cardData.card_faces && cardData.card_faces[0].image_uris) {
+                    imgUrl = cardData.card_faces[0].image_uris.normal;
+                }
+                if (imgUrl) {
+                    scryfallCache.set(cardName, imgUrl);
+                    tooltipImg.src = imgUrl;
+                }
+            }
+        } catch(err) {
+            console.log("No se pudo obtener imagen de la carta", cardName);
+        }
+    });
+
+    document.body.addEventListener('mousemove', (e) => {
+        const card = e.target.closest('.mtg-card');
+        if (!card || tooltip.style.display === 'none') return;
+
+        const tooltipWidth = 250;
+        const tooltipHeight = 350;
+        let finalX = e.pageX + 15;
+        let finalY = e.pageY + 15;
+
+        if (e.clientX + tooltipWidth + 30 > window.innerWidth) {
+            finalX = e.pageX - tooltipWidth - 15;
+        }
+        if (e.clientY + tooltipHeight + 30 > window.innerHeight) {
+            finalY = e.pageY - tooltipHeight - 15;
+        }
+
+        tooltip.style.left = finalX + 'px';
+        tooltip.style.top = finalY + 'px';
+    });
+
+    document.body.addEventListener('mouseout', (e) => {
+        if (e.target.closest('.mtg-card')) {
+            tooltip.style.display = 'none';
+            tooltipImg.src = '';
+        }
+    });
 
     // --- 🎨 UTILIDAD GLOBAL: TRANSFORMACIÓN MARKDOWN A HTML PREMIUM ---
     function markdownToHtml(text) {
@@ -880,6 +962,16 @@ document.addEventListener('DOMContentLoaded', () => {
         // === FASE 4: Ocultar intro y mostrar home (2800ms) ===
         setTimeout(() => {
             introScreen.style.display = 'none';
+            
+            // Cambio de pool de videos: entrar en modo ambientación web
+            document.body.classList.remove('on-intro');
+            currentPool = mainPool;
+            currentVideoIndex = -1; // Para que al llamar a playNextVideo empiece en 0
+            
+            if (typeof playNextVideo === 'function') {
+                playNextVideo();
+            }
+
             if (animationFrameId) cancelAnimationFrame(animationFrameId);
             homeScreen.classList.add('active-view');
             if (format === 'commander') {
@@ -1065,7 +1157,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 id: Date.now(),
                 archetype: archetypeValue.charAt(0).toUpperCase() + archetypeValue.slice(1),
                 subArchetype: '🔨 Forja Personalizada' + (keyCard ? ` — ${keyCard}` : ''),
-                format: 'standard',
+                format: globalFormat,
                 tribe: lore || 'Personalizado',
                 colorsFreq: `${colorsDisplay} (${purityLabel})`,
                 extraNotes: [
@@ -1298,65 +1390,30 @@ Salida esperada: Lista limpia y estructurada.`;
 
         // Master Prompt Logic
         btnMaster.addEventListener('click', () => {
-            let masterPrompt = `Actúa como un diseñador Maestro de entornos cerrados de Magic: The Gathering (como un diseñador de un prestigioso "Cube" o experto de "Battle Box").
-Mi misión es fabricar de golpe nuestra próxima GRAN TANDA de ${battleBox.length} mazos de 60 cartas para Kitchen Table Magic de gran poder.
-
-Contexto: Queremos vía libre para usar Staples históricos potentes y cartones caros, PERO el requisito número uno y la Directriz Vital de Equilibrio es: 
-¡QUIERO QUE DISEÑES ESTOS ${battleBox.length} MAZOS A LA VEZ PARA QUE ESTÉN PERFECTAMENTE EQUILIBRADOS Y AFIANZADOS ENTRE ELLOS COMO UN ECOSISTEMA! 
-Ningún mazo debe aplastar sistemáticamente a los demás. Tienen que interactuar todos contra todos. Prohibido incluir combos que asfixien y ganen la partida en turno 1-2. Interacción forzada.
-
-A continuación, los parámetros exigidos para cada uno de los ${battleBox.length} mazos:\n\n`;
-
-            battleBox.forEach((d, i) => {
-                masterPrompt += `--- [MAZO ${i+1}]: ${d.archetype} -> Variante: ${d.subArchetype} ---
-- Colores: ${d.colorsFreq}
-- Tribu: ${d.tribe === 'N/A' || d.tribe === '' ? 'A tu elección para optimizar' : d.tribe}
-- Notas extra mías: ${d.extraNotes || 'Ninguna'}\n\n`;
-            });
-
-            masterPrompt += `Por favor, primero hazme un pequeño resumen estratégico de por qué funcionará estupendamente la sinergia global y luego otórgame las ${battleBox.length} listas puras listas para copiar en una web de Proxys fácilmente.`;
-
-            navigator.clipboard.writeText(masterPrompt).then(() => {
-                const originalText = btnMaster.textContent;
-                btnMaster.textContent = "✨ ¡Mega Prompt Copiado al Portapapeles! ✨";
-                btnMaster.style.background = "#22c55e";
-                setTimeout(() => {
-                    btnMaster.textContent = originalText;
-                    btnMaster.style.background = "rgba(168, 85, 247, 0.4)";
-                }, 3000);
-            });
-        }, {once: true}); // Use once true to avoid duping listeners on re-render, though ideally we move the listener outside or remove it.
-        // Actually, since render happens often, let's remove existing listeners by cloning or just keeping {once: true} as a hack? 
-        // A better way is: it's fine, the DOM replaces if we just re-render but wait, btnMaster is outside bb-list. 
-        // We need to replace the btnMaster node to wipe event listeners if renderBattleBox runs multiple times.
-        const newBtnMaster = btnMaster.cloneNode(true);
-        btnMaster.parentNode.replaceChild(newBtnMaster, btnMaster);
-
-        newBtnMaster.addEventListener('click', () => {
              const isCmdr = battleBox.length > 0 && battleBox[0].format === 'commander';
              let masterPrompt = "";
              
              if (isCmdr) {
                  masterPrompt = `Actúa como un diseñador Maestro de metajuegos de Magic: The Gathering Commander (EDH).
-Mi misión es fabricar una "Battle Box Multijugador" de ${battleBox.length} mazos de COMMANDER de alto poder.
+Mi misión es fabricar ${battleBox.length === 1 ? 'el mazo de COMMANDER definitivo' : 'una "Battle Box Multijugador" de ' + battleBox.length + ' mazos de COMMANDER'} de alto poder.
 
-DIRECTRICES: TODOS los ${battleBox.length} mazos deben estar al MISMO nivel de poder (Power Level 7-8). Interacción constante, magia épica y prohibición total a combos degenerados infumables en los primeros turnos que bloqueen la partida sin respuestas.
+DIRECTRICES: ${battleBox.length === 1 ? 'El mazo debe ser' : 'TODOS los mazos deben estar'} al MISMO nivel de poder (Power Level 7-8). Interacción constante, magia épica y prohibición total a combos degenerados infumables en los primeros turnos que bloqueen la partida sin respuestas.
 
 REGLAS DE COMANDANTE INFALIBLES POR MAZO:
 1. 100 Cartas Exactas (1 Comandante Legendario + 99 cartas).
 2. REGLA SINGLETON: 1 sola copia máxima por carta (salvo tierras básicas).
 3. Identidad de Color estricta basada en el Comandante elegido.
 
-Parámetros exigidos para cada mazo del grupo:\n\n`;
+Parámetros exigidos:\n\n`;
              } else {
                  masterPrompt = `Actúa como un diseñador Maestro de entornos cerrados de Magic: The Gathering (como un Cube o Battle Box).
-Mi misión es fabricar de golpe nuestra próxima GRAN TANDA de ${battleBox.length} mazos de 60 cartas para Kitchen Table Magic de gran poder.
+Mi misión es fabricar ${battleBox.length === 1 ? 'un mazo de 60 cartas excepcional' : 'de golpe nuestra próxima tanda de ' + battleBox.length + ' mazos de 60 cartas'} para Kitchen Table Magic de gran poder.
 
 Contexto: Queremos usar cartas muy potentes y rotas, PERO el requisito número uno es: 
-¡QUIERO QUE DISEÑES LAS LISTAS DE ESTOS ${battleBox.length} MAZOS A LA VEZ PARA QUE ESTÉN PERFECTAMENTE EQUILIBRADOS Y AFIANZADOS ENTRE ELLOS! 
+¡QUIERO QUE DISEÑES ${battleBox.length === 1 ? 'EL LISTADO' : 'LOS LISTADOS A LA VEZ'} PARA QUE ${battleBox.length === 1 ? 'ESTÉ PERFECTAMENTE EQUILIBRADO' : 'ESTÉN PERFECTAMENTE EQUILIBRADOS Y AFIANZADOS ENTRE ELLOS'}! 
 Ningún mazo debe aplastar sistemáticamente a los demás. Se permiten hasta 4 copias de cartas (no es EDH).
 
-A continuación, los parámetros exigidos para cada uno de los ${battleBox.length} mazos de 60 cartas:\n\n`;
+A continuación, los parámetros exigidos:\n\n`;
              }
 
             battleBox.forEach((d, i) => {
@@ -1369,12 +1426,12 @@ A continuación, los parámetros exigidos para cada uno de los ${battleBox.lengt
             masterPrompt += `Hazme un pequeño resumen estratégico de su sinergia cruzada y otórgame las ${battleBox.length} listas limpias y de corrido listas para imprimir.`;
 
             navigator.clipboard.writeText(masterPrompt).then(() => {
-                const originalText = newBtnMaster.textContent;
-                newBtnMaster.textContent = "✨ ¡Copiado con Éxito Maestro! ✨";
-                newBtnMaster.style.background = "#22c55e"; // green
+                const originalText = btnMaster.textContent;
+                btnMaster.textContent = "✨ ¡Copiado con Éxito Maestro! ✨";
+                btnMaster.style.background = "#22c55e"; // green
                 setTimeout(() => {
-                    newBtnMaster.textContent = originalText;
-                    newBtnMaster.style.background = "rgba(168, 85, 247, 0.4)";
+                    btnMaster.textContent = originalText;
+                    btnMaster.style.background = "rgba(168, 85, 247, 0.4)";
                 }, 3000);
             });
         });
@@ -1407,7 +1464,7 @@ A continuación, los parámetros exigidos para cada uno de los ${battleBox.lengt
                 btnViewGuide.style.background = 'rgba(245, 158, 11, 0.4)';
                 btnViewList.style.background = 'transparent';
                 
-                const chunks = lastAiResponse.split('---').filter(c => c.trim().length > 10);
+                const chunks = lastAiResponse.split(/\n---\n/).filter(c => c.trim().length > 10);
                 if (chunks.length > 1) {
                     // Si hay varios mazos, los colapsamos individualmente incluso en vista guía
                     let fullHtml = '';
@@ -1437,7 +1494,7 @@ A continuación, los parámetros exigidos para cada uno de los ${battleBox.lengt
                 btnViewList.style.background = 'rgba(245, 158, 11, 0.4)';
                 btnViewGuide.style.background = 'transparent';
 
-                const chunks = lastAiResponse.split('---').filter(c => c.trim().length > 10);
+                const chunks = lastAiResponse.split(/\n---\n/).filter(c => c.trim().length > 10);
                 const container = document.createElement('div');
                 container.className = 'ai-results-list';
 
@@ -1465,7 +1522,7 @@ A continuación, los parámetros exigidos para cada uno de los ${battleBox.lengt
                 aiResults.appendChild(container);
             }
             
-            activarTooltipsMágicos();
+
         }
 
         btnViewGuide.addEventListener('click', () => renderAiResults('guide'));
@@ -1599,9 +1656,10 @@ A continuación, los parámetros exigidos para cada uno de los ${battleBox.lengt
             }
 
             // Construir el prompt específico para la IA (con directriz de [[Carta]])
-            let promptIA = `Actúa como un diseñador Maestro de entornos cerrados de Magic: The Gathering (como un diseñador de un prestigioso "Cube" o de "Battle Box").
-Mi misión es fabricar de golpe nuestra próxima GRAN TANDA de ${battleBox.length} mazos equilibrados para Kitchen Table Magic de gran poder.
-¡QUIERO QUE DISEÑES LAS LISTAS A LA VEZ PARA QUE ESTÉN PERFECTAMENTE EQUILIBRADOS Y AFIANZADOS ENTRE ELLOS! Ningún mazo debe aplastar sistemáticamente. Partidas de mínimo 4 turnos garantizadas.
+            const isSingle = battleBox.length === 1;
+            let promptIA = `Actúa como un diseñador Maestro de entornos cerrados de Magic: The Gathering (como un diseñador de prestigiosas "Battle Box").
+Mi misión es fabricar ${isSingle ? 'un mazo excepcional' : 'de golpe nuestra próxima tanda de ' + battleBox.length + ' mazos equilibrados'} para Kitchen Table Magic de gran poder.
+${isSingle ? 'Asegúrate de que el mazo tenga una identidad clara y sea divertido de jugar.' : '¡QUIERO QUE DISEÑES LAS LISTAS A LA VEZ PARA QUE ESTÉN PERFECTAMENTE EQUILIBRADOS ENTRE ELLOS! Ningún mazo debe aplastar sistemáticamente.'} Partidas de mínimo 4 turnos garantizadas.
 
 A continuación, los parámetros exigidos:\n\n`;
 
@@ -1624,12 +1682,21 @@ ${isCommander ? '- REGLA CRÍTICA EDH: Mazo de 100 cartas (1 Comandante + 99 car
 3. EQUILIBRIO "BATTLE BOX": Los mazos deben estar diseñados para enfrentarse entre sí.
 4. ESTRUCTURA: Los mazos DEBEN separarse claramente con "---".
 5. CABECERA: La PRIMERA LÍNEA de cada mazo debe ser su nombre seguido de sus iconos de color (ej: # Goblins Rojo-Verde 🔴🟢).`;
+            promptIA += `\n7. ANTI-ESTANCAMIENTO (VARIEDAD): Evita caer en los "Staples" aburridos y obvios del arquetipo (ej: no pongas Lightning Bolt en todo mazo rojo, ni Counterspell en todo mazo azul). Intenta elegir al menos un 30% de cartas inusuales, favoritas de la comunidad (Hidden Gems) o cartas temáticas que encajen con la tribu/lore pedido, en lugar del paquete genérico de internet.`;
+
 
             // UI Feedback — Skeleton Loading AAA
             aiStatus.style.display = 'block';
             aiResults.innerHTML = '<div class="skeleton-line" style="width:60%"></div><div class="skeleton-line" style="width:85%"></div><div class="skeleton-line" style="width:70%"></div><div class="skeleton-line" style="width:90%"></div><div class="skeleton-line" style="width:50%"></div>';
             aiResults.style.display = 'block';
             aiResults.classList.add('skeleton-loading');
+            
+            // Activar Modo Épico Visual y Modo Cine Instantáneo
+            document.body.classList.add('ai-thinking-mode');
+            document.body.classList.add('cinema-mode-active');
+            document.body.classList.add('instant-cinema');
+            if (introVideo) introVideo.classList.add('active');
+
             btnAiGen.disabled = true;
             btnAiGen.style.opacity = '0.5';
 
@@ -1699,6 +1766,17 @@ ${isCommander ? '- REGLA CRÍTICA EDH: Mazo de 100 cartas (1 Comandante + 99 car
             } finally {
                 aiStatus.style.display = 'none';
                 aiResults.classList.remove('skeleton-loading');
+                
+                // Desactivar Modo Épico Visual (opcional: dejarlo un poco más si quieres)
+                document.body.classList.remove('ai-thinking-mode');
+                document.body.classList.remove('cinema-mode-active');
+                document.body.classList.remove('instant-cinema');
+                
+                // Si ya no estamos en el intro, ocultamos el video (o lo dejamos si prefieres fondo vivo)
+                if (document.getElementById('intro-screen').style.display === 'none') {
+                    // introVideo.classList.remove('active'); // Descomentar si quieres que el video desaparezca al terminar
+                }
+
                 btnAiGen.disabled = false;
                 btnAiGen.style.opacity = '1';
             }
@@ -1711,43 +1789,19 @@ ${isCommander ? '- REGLA CRÍTICA EDH: Mazo de 100 cartas (1 Comandante + 99 car
     const btnShareWhatsapp = document.getElementById('btn-share-whatsapp');
     const btnShareTelegram = document.getElementById('btn-share-telegram');
 
+    let isPublishingToCommunity = false;
+
     if (btnSaveAiDecks) {
         btnSaveAiDecks.addEventListener('click', () => {
             if (!lastAiResponse) return;
+            isPublishingToCommunity = false;
             archTitle.value = "";
             archNote.value = "";
+            document.getElementById('archive-overlay').querySelector('h3').textContent = "Bautizar Generación";
+            document.getElementById('btn-confirm-archive').textContent = "Guardar en la Bóveda";
             archOverlay.classList.add('active');
         });
     }
-
-    if (btnConfirmArchive) {
-        btnConfirmArchive.addEventListener('click', () => {
-            let savedDecklists = JSON.parse(localStorage.getItem('saved_decklists')) || [];
-            
-            savedDecklists.push({ 
-                title: archTitle.value.trim() || 'Generación Anónima',
-                note: archNote.value.trim(),
-                date: new Date().toLocaleString(), 
-                content: lastAiResponse 
-            });
-            localStorage.setItem('saved_decklists', JSON.stringify(savedDecklists));
-            
-            archOverlay.classList.remove('active');
-
-            if (btnSaveAiDecks) {
-                btnSaveAiDecks.innerHTML = "✅ ¡Archivado!";
-                btnSaveAiDecks.style.background = "rgba(16, 185, 129, 0.5)";
-                setTimeout(() => {
-                    btnSaveAiDecks.innerHTML = "💾 Archivar Local";
-                    btnSaveAiDecks.style.background = "rgba(16, 185, 129, 0.2)";
-                }, 2000);
-            }
-            alert("¡Lote de mazos guardado con éxito en tu ordenador!");
-        });
-    }
-
-    // Variables de estado para no pisar el modal de Archivo
-    let isPublishingToCommunity = false;
 
     if (btnPublishCommunity) {
         btnPublishCommunity.addEventListener('click', () => {
@@ -1766,20 +1820,15 @@ ${isCommander ? '- REGLA CRÍTICA EDH: Mazo de 100 cartas (1 Comandante + 99 car
         });
     }
 
-    // Modificación de la Bóveda para discernir si es local o publica
     if (btnConfirmArchive) {
-        // Debemos eliminar el listener anterior y hacer uno nuevo para manejar ambos flujos
-        const clonedBtn = btnConfirmArchive.cloneNode(true);
-        btnConfirmArchive.parentNode.replaceChild(clonedBtn, btnConfirmArchive);
-        
-        clonedBtn.addEventListener('click', async () => {
+        btnConfirmArchive.addEventListener('click', async () => {
             const title = archTitle.value.trim() || (isPublishingToCommunity ? 'Aporte de Planeswalker' : 'Generación Anónima');
             const note = archNote.value.trim();
             const dateStr = new Date().toLocaleString();
 
             if (isPublishingToCommunity) {
-                clonedBtn.textContent = "Sincronizando...";
-                clonedBtn.disabled = true;
+                btnConfirmArchive.textContent = "Sincronizando...";
+                btnConfirmArchive.disabled = true;
 
                 try {
                     await db.collection("community-vault").add({
@@ -1805,8 +1854,8 @@ ${isCommander ? '- REGLA CRÍTICA EDH: Mazo de 100 cartas (1 Comandante + 99 car
                     console.error("Error al publicar:", e);
                     alert("Error subiendo a la base de datos.");
                 } finally {
-                    clonedBtn.disabled = false;
-                    clonedBtn.textContent = "Guardar en la Bóveda";
+                    btnConfirmArchive.disabled = false;
+                    btnConfirmArchive.textContent = "Guardar en la Bóveda";
                     isPublishingToCommunity = false;
                     document.getElementById('archive-overlay').querySelector('h3').textContent = "Bautizar Generación";
                 }
@@ -1855,12 +1904,156 @@ ${isCommander ? '- REGLA CRÍTICA EDH: Mazo de 100 cartas (1 Comandante + 99 car
 
     // --- GUÍA DE BOLSILLO: Pocket Guide Print System ---
     const btnPocketGuide = document.getElementById('btn-pocket-guide');
-    
     if (btnPocketGuide) {
         btnPocketGuide.addEventListener('click', () => {
             if (!lastAiResponse) return;
             generarGuiaDeBolsillo(lastAiResponse);
         });
+    }
+
+    // --- EXPORTADOR DE PROXYS ---
+    const btnExportProxys = document.getElementById('btn-export-proxys');
+    if (btnExportProxys) {
+        btnExportProxys.addEventListener('click', () => {
+            if (!lastAiResponse) return;
+            generarListadoProxys(lastAiResponse);
+        });
+    }
+
+    function generarListadoProxys(rawResponse) {
+        // Eliminar modal anterior si existe
+        const existing = document.querySelector('.proxy-export-overlay');
+        if (existing) existing.remove();
+
+        const chunks = rawResponse.split(/\n---\n/)
+            .filter(c => c.trim().length > 10)
+            .filter(c => /\[\[.+?\|[CURM]\]\]/i.test(c));
+
+        let exportText = "";
+
+        // Tokens heurísticos (mapeo para detección reutilizable)
+        const tokenKeywords = [
+            { key: /tesoro/i, token: "Treasure Token" },
+            { key: /comida/i, token: "Food Token" },
+            { key: /pista/i, token: "Clue Token" },
+            { key: /mapa/i, token: "Map Token" },
+            { key: /sangre/i, token: "Blood Token" },
+            { key: /zombie|zombi/i, token: "Zombie Token" },
+            { key: /soldado|soldier/i, token: "Soldier Token" },
+            { key: /espíritu|spirit/i, token: "Spirit Token" },
+            { key: /trasgo|goblin/i, token: "Goblin Token" },
+            { key: /bestia|beast/i, token: "Beast Token" },
+            { key: /saproling/i, token: "Saproling Token" },
+            { key: /insecto|insect/i, token: "Insect Token" },
+            { key: /dragón|dragon/i, token: "Dragon Token" },
+            { key: /angel|ángel/i, token: "Angel Token" },
+            { key: /fichas? de .*?1\/1/i, token: "1/1 Creature Token" },
+            { key: /fichas? de .*?2\/2/i, token: "2/2 Creature Token" },
+            { key: /fichas? de .*?3\/3/i, token: "3/3 Creature Token" }
+        ];
+
+        chunks.forEach((chunk, index) => {
+            // Extraer nombre del mazo para este chunk
+            let deckName = "MAZO DESCONOCIDO";
+            const emojiColorRegex = /[\u{1F534}\u{1F535}\u{26AB}\u{1F7E2}\u{26AA}\u{1F7E0}\u{1F7E1}\u{2B1B}\u{1F7E3}\u{1F7E4}\u{2B55}\u{1F7E5}\u{1F7E6}\u{1F7E7}\u{1F7E8}\u{1F7E9}]/gu;
+            
+            const firstLines = chunk.trim().split('\n').slice(0, 5);
+            for (const line of firstLines) {
+                if (line.trim().startsWith('#')) {
+                    deckName = line.replace(/^#+\s*/, '').replace(emojiColorRegex, '').trim().toUpperCase();
+                    break;
+                }
+            }
+            if (deckName === "MAZO DESCONOCIDO") {
+                const boldMatch = chunk.match(/\*\*([^*]{5,60})\*\*/);
+                if (boldMatch) deckName = boldMatch[1].replace(emojiColorRegex, '').trim().toUpperCase();
+            }
+
+            exportText += `// === ${deckName} ===\n`;
+
+            // Extraer cartas de este chunk
+            const deckCardMap = new Map();
+            const cardPattern = /(?:(\d+)\s*x?\s*)?\[\[(.*?)(?:\|.*?)?\]\]/g;
+            let match;
+            while ((match = cardPattern.exec(chunk)) !== null) {
+                const qty = parseInt(match[1]) || 1;
+                let name = match[2].trim();
+                name = name.replace(/\s*\(.*?\)\s*$/, ''); 
+                name = name.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                deckCardMap.set(name, (deckCardMap.get(name) || 0) + qty);
+            }
+
+            const sortedCards = Array.from(deckCardMap.keys()).sort();
+            sortedCards.forEach(name => {
+                exportText += `${deckCardMap.get(name)} ${name}\n`;
+            });
+
+            // Detectar tokens para este chunk
+            const deckTokens = new Set();
+            tokenKeywords.forEach(tk => {
+                if (tk.key.test(chunk)) {
+                    deckTokens.add(tk.token);
+                }
+            });
+
+            if (deckTokens.size > 0) {
+                exportText += "// Tokens:\n";
+                Array.from(deckTokens).sort().forEach(token => {
+                    exportText += `1 ${token}\n`;
+                });
+            }
+
+            exportText += "\n"; // Espacio entre mazos
+        });
+
+        // 4. Crear el Modal DOM
+        const modalHtml = `
+            <div class="proxy-export-overlay active">
+                <div class="proxy-modal-box">
+                    <div class="proxy-modal-header">
+                        <h3>🧬 Listado para Proxys</h3>
+                        <p>Copia esta lista y pégala en tu web de proxys favorita.</p>
+                    </div>
+                    <textarea id="proxy-list-area" readonly spellcheck="false">${exportText.trim()}</textarea>
+                    <div class="proxy-modal-actions">
+                        <button id="btn-copy-proxy-list" class="btn-primary">📋 Copiar Lista</button>
+                        <button id="btn-close-proxy-modal" class="btn-secondary">✕ Cerrar</button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+        // 5. Eventos del Modal
+        const overlay = document.querySelector('.proxy-export-overlay');
+        const btnCopy = document.getElementById('btn-copy-proxy-list');
+        const btnClose = document.getElementById('btn-close-proxy-modal');
+        const textArea = document.getElementById('proxy-list-area');
+
+        btnCopy.addEventListener('click', () => {
+            textArea.select();
+            document.execCommand('copy');
+            btnCopy.innerHTML = "✅ ¡Copiado!";
+            setTimeout(() => btnCopy.innerHTML = "📋 Copiar Lista", 2000);
+        });
+
+        const closeProxyModal = () => {
+            overlay.classList.remove('active');
+            setTimeout(() => overlay.remove(), 400);
+        };
+
+        btnClose.addEventListener('click', closeProxyModal);
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) closeProxyModal(); });
+        
+        // Cerrar con ESC
+        const escHandler = (e) => {
+            if (e.key === 'Escape') {
+                closeProxyModal();
+                document.removeEventListener('keydown', escHandler);
+            }
+        };
+        document.addEventListener('keydown', escHandler);
     }
 
     function parseDeckForGuide(chunkRaw) {
@@ -2123,7 +2316,7 @@ ${isCommander ? '- REGLA CRÍTICA EDH: Mazo de 100 cartas (1 Comandante + 99 car
         if (existing) existing.remove();
 
         // FILTRO CRÍTICO: solo chunks que contengan listas de cartas reales [[Card|R]]
-        const chunks = rawResponse.split('---')
+        const chunks = rawResponse.split(/\n---\n/)
             .filter(c => c.trim().length > 10)
             .filter(c => /\[\[.+?\|[CURM]\]\]/i.test(c));
         
@@ -2249,75 +2442,7 @@ ${isCommander ? '- REGLA CRÍTICA EDH: Mazo de 100 cartas (1 Comandante + 99 car
     }
 
     // Lógica del Hover de Scryfall
-    function activarTooltipsMágicos() {
-        const tooltip = document.getElementById('mtg-tooltip');
-        const tooltipImg = document.getElementById('mtg-tooltip-img');
-        const cards = document.querySelectorAll('.mtg-card');
-        
-        cards.forEach(card => {
-            card.addEventListener('mouseenter', async (e) => {
-                const cardName = card.getAttribute('data-card');
-                tooltip.style.display = 'block';
-                // Animación css
-                tooltip.style.opacity = "0";
-                setTimeout(() => tooltip.style.opacity = "1", 50);
-                
-                // Ponemos la imagen en blanco o loading
-                tooltipImg.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='; // 1x1 transparent
 
-                try {
-                    // LLamada a Scryfall
-                    const res = await fetch(`https://api.scryfall.com/cards/named?exact=${encodeURIComponent(cardName)}`);
-                    let cardData;
-                    if (res.ok) {
-                        cardData = await res.json();
-                    } else {
-                        // Si falla buscando nombre exacto, prueba con fuzzy
-                        const resFuzzy = await fetch(`https://api.scryfall.com/cards/named?fuzzy=${encodeURIComponent(cardName)}`);
-                        if (resFuzzy.ok) {
-                           cardData = await resFuzzy.json();
-                        }
-                    }
-
-                    if (cardData) {
-                        // Manejar cartas doble cara (MDFC)
-                        if (cardData.image_uris && cardData.image_uris.normal) {
-                            tooltipImg.src = cardData.image_uris.normal;
-                        } else if (cardData.card_faces && cardData.card_faces[0].image_uris) {
-                            tooltipImg.src = cardData.card_faces[0].image_uris.normal;
-                        }
-                    }
-                } catch(err) {
-                   console.log("No se pudo obtener imagen de la carta", cardName);
-                }
-            });
-
-            card.addEventListener('mousemove', (e) => {
-                const tooltipWidth = 250;
-                const tooltipHeight = 350;
-                let finalX = e.pageX + 15;
-                let finalY = e.pageY + 15;
-
-                // Si choca por la derecha
-                if (e.clientX + tooltipWidth + 30 > window.innerWidth) {
-                    finalX = e.pageX - tooltipWidth - 15;
-                }
-                
-                // Si choca por debajo (límite visual de la ventana actual)
-                if (e.clientY + tooltipHeight + 30 > window.innerHeight) {
-                    finalY = e.pageY - tooltipHeight - 15;
-                }
-
-                tooltip.style.left = finalX + 'px';
-                tooltip.style.top = finalY + 'px';
-            });
-
-            card.addEventListener('mouseleave', () => {
-                tooltip.style.display = 'none';
-                tooltipImg.src = '';
-            });
-        });
-    }
 
     // ----------------------------------------------------
     // PROTOCOLO DE JUICIO FINAL vía OpenRouter (Modelo Dinámico)
@@ -2462,8 +2587,11 @@ Haz tu respuesta limpia, estéticamente agradable e innegable.`;
 
             judgeVerdict.innerHTML = '<div class="skeleton-line" style="width:80%"></div><div class="skeleton-line" style="width:60%"></div><div class="skeleton-line" style="width:90%"></div><div class="skeleton-line" style="width:55%"></div>';
             judgeVerdict.style.display = 'block';
+            judgeVerdict.style.display = 'block';
             judgeVerdict.classList.add('skeleton-loading');
             judgeLoader.style.display = 'block';
+            document.body.classList.add('cinema-mode-active');
+            document.body.classList.add('instant-cinema');
             btnJudge.disabled = true;
 
             try {
@@ -2481,7 +2609,7 @@ Haz tu respuesta limpia, estéticamente agradable e innegable.`;
 
                 judgeVerdict.innerHTML = markdownToHtml(answer);
                 judgeVerdict.style.display = 'block';
-                activarTooltipsMágicos();
+
 
             } catch (err) {
                 console.error(err);
@@ -2490,6 +2618,8 @@ Haz tu respuesta limpia, estéticamente agradable e innegable.`;
             } finally {
                 judgeLoader.style.display = 'none';
                 judgeVerdict.classList.remove('skeleton-loading');
+                document.body.classList.remove('cinema-mode-active');
+                document.body.classList.remove('instant-cinema');
                 btnJudge.disabled = false;
                 setTimeout(() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }), 100);
             }
@@ -2753,6 +2883,24 @@ Haz tu respuesta limpia, estéticamente agradable e innegable.`;
             listDiv.innerHTML = `<div class="empty-bb" style="color: #ef4444; border-color: #ef4444;">❌ Error contactando con Firebase. Contacta con el administrador.</div>`;
         }
     }
+
+    // --- 🎬 MODO CINE (TOGGLE INTEGRATION) ---
+    const btnCinema = document.getElementById('btn-cinema-mode');
+    if (btnCinema) {
+        btnCinema.addEventListener('click', (e) => {
+            e.stopPropagation(); // Evitar que el clic se propague al window
+            document.body.classList.toggle('cinema-mode-active');
+            console.log("🎬 Modo Cine:", document.body.classList.contains('cinema-mode-active') ? "Activado" : "Desactivado");
+        });
+    }
+
+    // Salir del modo cine al hacer clic en cualquier lugar del fondo
+    window.addEventListener('click', () => {
+        if (document.body.classList.contains('cinema-mode-active')) {
+            document.body.classList.remove('cinema-mode-active');
+            console.log("🎬 Modo Cine: Desactivado por clic general");
+        }
+    });
 
 });
 

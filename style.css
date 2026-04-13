@@ -546,7 +546,7 @@ h1, h2, h3, h4, .quote { font-family: 'Cinzel', serif; }
     top: 0; left: 0; width: 100vw; 
     height: 100vh; /* Fallback */
     height: 100dvh; 
-    background-color: #050505;
+    background-color: transparent; /* Ahora el video es global */
     z-index: 9999;
     display: flex;
     align-items: center;
@@ -556,33 +556,103 @@ h1, h2, h3, h4, .quote { font-family: 'Cinzel', serif; }
 }
 
 #intro-video-bg {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    object-position: center bottom; /* Prioriza que la parte de abajo sea visible */
-    z-index: 0;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    width: 100vw;
+    height: 100vh;
+    transform: translate(-50%, -50%);
+    object-fit: contain; /* En PC siempre vemos el video completo */
+    background-color: #050505; /* Fondo negro profundo para huecos */
+    z-index: -5;
+    opacity: 0.25; /* Aumentado ligeramente para que se aprecie mejor (Nítido) */
+    transition: opacity 1.5s cubic-bezier(0.4, 0, 0.2, 1), filter 1.5s ease;
+    pointer-events: none;
 }
 
-/* Fix para vídeos verticales (Eldrazi/Hidra) en Desktop */
-#intro-video-bg.vertical-video-fit {
-    object-fit: contain;
-    background-color: #000;
+/* Modo Intro: Video al 100% */
+body.on-intro #intro-video-bg {
+    opacity: 1;
 }
 
+/* 🎭 MODO ÉPICO IA: Ajuste de nitidez y brillo cuando la IA piensa */
+body.ai-thinking-mode #intro-video-bg {
+    opacity: 1;
+    filter: saturate(1.2) contrast(1.1); /* Sutil, sin oscurecer ni saturar en exceso */
+    z-index: -1;
+    animation: epicGlow 4s infinite alternate;
+}
+
+@keyframes epicGlow {
+    from { filter: saturate(1.1) contrast(1.05) brightness(1); }
+    to { filter: saturate(1.3) contrast(1.15) brightness(1.1); }
+}
+
+/* Forzar que los paneles de cristal se vuelvan más translúcidos en modo épico */
+body.ai-thinking-mode .container.view,
+body.ai-thinking-mode .ai-panel {
+    background: rgba(15, 23, 42, 0.2) !important;
+    backdrop-filter: blur(8px) saturate(180%) !important;
+}
+
+/* 📱 En Móvil mantenemos el recorte inmersivo si se prefiere */
 @media (max-width: 768px) {
-    #intro-video-bg.vertical-video-fit {
-        object-fit: cover; /* En móvil sí queremos que sea fullscreen vertical */
+    #intro-video-bg {
+        object-fit: cover; 
     }
 }
+
+/* 🎬 MODO CINE (CINEMA MODE): Foco total en el video */
+body.cinema-mode-active {
+    overflow: hidden; /* Evita scroll mientras disfrutamos del video */
+}
+
+body.cinema-mode-active #intro-video-bg {
+    opacity: 1 !important;
+    filter: none !important; /* Eliminamos cualquier filtro de saturación o contraste */
+    animation: none !important; /* Detenemos la animación epicGlow para que el video sea 100% nítido */
+    z-index: 99998 !important; /* Justo debajo del botón de cerrar */
+}
+
+body.cinema-mode-active .container.view,
+body.cinema-mode-active .intro-content,
+body.cinema-mode-active .floating-btn:not(.cinema-toggle),
+body.cinema-mode-active nav,
+body.cinema-mode-active .golden-rule,
+body.cinema-mode-active footer {
+    opacity: 0 !important;
+    pointer-events: none !important;
+    transition: opacity 1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ⚡ ACTIVACIÓN INSTANTÁNEA: Para cuando la IA genera */
+body.cinema-mode-active.instant-cinema .container.view,
+body.cinema-mode-active.instant-cinema .intro-content,
+body.cinema-mode-active.instant-cinema .floating-btn:not(.cinema-toggle),
+body.cinema-mode-active.instant-cinema nav,
+body.cinema-mode-active.instant-cinema .golden-rule,
+body.cinema-mode-active.instant-cinema footer {
+    opacity: 0 !important;
+    transition: opacity 0s !important; /* Desaparición fulminante */
+}
+
+/* Ajuste del botón en modo cine para que no estorbe pero se pueda salir */
+body.cinema-mode-active .cinema-toggle {
+    opacity: 0.3;
+    z-index: 99999 !important;
+    border-color: rgba(255,255,255,0.2) !important;
+}
+
+body.cinema-mode-active .cinema-toggle:hover {
+    opacity: 1;
+    background: rgba(255,255,255,0.1);
+}
+
 .intro-overlay::before {
     content: '';
     position: absolute;
     top: 0; left: 0; width: 100%; height: 100%;
-    /* Viñeta cinemática sutil - deja ver el fondo claramente */
-    background: linear-gradient(to top, rgba(10,10,12,0.7) 0%, rgba(10,10,12,0.05) 40%, rgba(10,10,12,0.3) 100%);
+    background: linear-gradient(to top, rgba(10,10,12,0.8) 0%, rgba(10,10,12,0.1) 50%, rgba(10,10,12,0.4) 100%);
     z-index: 1;
     pointer-events: none;
 }
@@ -1658,6 +1728,107 @@ details[open] {
     -webkit-backdrop-filter: var(--glass-blur);
     box-shadow: var(--glass-shadow-sm);
     border-radius: 16px !important;
+}
+
+/* --- MODAL EXPORTADOR DE PROXYS --- */
+.proxy-export-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(8px);
+    z-index: 10001;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.proxy-export-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+.proxy-modal-box {
+    width: 90%;
+    max-width: 600px;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(16px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 24px;
+    padding: 2.5rem;
+    box-shadow: 0 40px 80px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.1);
+    transform: scale(0.9) translateY(20px);
+    transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.proxy-export-overlay.active .proxy-modal-box {
+    transform: scale(1) translateY(0);
+}
+.proxy-modal-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+.proxy-modal-header h3 {
+    font-family: 'Cinzel', serif;
+    font-size: 2rem;
+    color: var(--color-gold);
+    margin-bottom: 0.5rem;
+    text-shadow: 0 0 20px rgba(245, 158, 11, 0.3);
+}
+.proxy-modal-header p {
+    color: #94a3b8;
+    font-size: 0.95rem;
+}
+#proxy-list-area {
+    width: 100%;
+    height: 350px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    color: #e2e8f0;
+    font-family: 'Fira Code', 'Courier New', monospace;
+    font-size: 0.9rem;
+    padding: 1.5rem;
+    resize: none;
+    margin-bottom: 2rem;
+    outline: none;
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-gold) transparent;
+}
+#proxy-list-area:focus {
+    border-color: var(--color-gold);
+    box-shadow: 0 0 15px rgba(245, 158, 11, 0.1);
+}
+.proxy-modal-actions {
+    display: flex;
+    gap: 1.5rem;
+    justify-content: center;
+}
+.proxy-modal-actions button {
+    padding: 1rem 2.5rem;
+    border-radius: 50px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+.btn-primary {
+    background: var(--color-gold);
+    color: #000;
+    border: none;
+    box-shadow: 0 10px 20px rgba(245, 158, 11, 0.2);
+}
+.btn-primary:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 15px 30px rgba(245, 158, 11, 0.4);
+}
+.btn-secondary {
+    background: rgba(255,255,255,0.05);
+    color: white;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+.btn-secondary:hover {
+    background: rgba(255,255,255,0.1);
 }
 
 /* ═══════════════════════════════════════════════════════════════
