@@ -39,8 +39,9 @@
         🎬
     </button>
 
-    <!-- Fondo de video dinámico Global -->
-    <video id="intro-video-bg" autoplay muted playsinline></video>
+    <!-- Fondo de video dinámico Global (Doble Buffer para Crossfade) -->
+    <video id="video-bg-1" class="video-bg-layer" autoplay muted playsinline></video>
+    <video id="video-bg-2" class="video-bg-layer" muted playsinline></video>
 
     <!-- PANTALLA CERO: Selección de Formato y Portal de Entrada Épico -->
     <main id="intro-screen" class="intro-overlay">
@@ -428,6 +429,33 @@
 
             <button id="btn-confirm-password" class="btn-save-bb" style="background: rgba(59, 130, 246, 0.3); border: 1px solid #3b82f6; color: white;">Verificar Acceso</button>
             <div id="password-error" style="color: #ef4444; margin-top: 1rem; display: none; font-size: 0.9rem;">🚫 Contraseña incorrecta. Intruso detectado.</div>
+        </div>
+    </div>
+
+    <!-- Modal de Carga "Obsidian Loading Portal" (Stitch Design) -->
+    <div id="ai-loading-modal" class="selection-overlay">
+        <div class="loading-portal">
+            <div class="portal-header">
+                <span class="portal-title">CONEXIÓN CON EL ORÁCULO</span>
+            </div>
+            <div class="portal-video-container">
+                <video id="loading-video-fridge" muted loop playsinline>
+                    <source src="videos/Fridge.webm" type="video/webm">
+                </video>
+            </div>
+            <div class="portal-status">
+                <div class="rune-container">
+                    <span class="rune">✨</span>
+                </div>
+                <h2 id="portal-status-text">INVOCANDO LISTAS MATEMÁTICAMENTE...</h2>
+                <div class="rune-container">
+                    <span class="rune">✨</span>
+                </div>
+            </div>
+            <p class="portal-hint">Este proceso consume energía de la Battle Box. No cierres el portal.</p>
+            <div class="portal-progress-bar">
+                <div class="progress-fill"></div>
+            </div>
         </div>
     </div>
 

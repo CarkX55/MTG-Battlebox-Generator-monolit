@@ -1,24 +1,28 @@
 :root {
-    --bg-dark: #0f172a;
-    --text-main: #f8fafc;
-    --text-muted: #94a3b8;
+    --bg-dark: #050505; /* Deep Black for Archer/PRO look */
+    --text-main: #e2e8f0;
+    --text-muted: #64748b;
     
-    --color-red: #ef4444;    /* Aggro */
-    --color-blue: #3b82f6;   /* Control */
-    --color-green: #22c55e;  /* Midrange */
-    --color-purple: #a855f7; /* Tempo */
-    --color-gold: #f59e0b;   /* Combo */
+    --color-red: #ef4444;
+    --color-blue: #3b82f6;
+    --color-green: #22c55e;
+    --color-purple: #a855f7;
+    --color-gold: #b38728; /* Professional Metal Gold */
     
-    /* ═══ TRUE GLASSMORPHISM TOKENS ═══ */
-    --panel-bg: rgba(15, 23, 42, 0.35);
-    --panel-border: rgba(255, 255, 255, 0.06);
-    --glass-blur: blur(16px) saturate(160%);
-    --glass-shadow: 0 30px 60px rgba(0,0,0,0.6), inset 0 1px 0px rgba(255,255,255,0.15);
-    --glass-shadow-sm: 0 15px 35px rgba(0,0,0,0.5), inset 0 1px 0px rgba(255,255,255,0.1);
-    --physics-bounce: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease, border-color 0.4s ease;
+    /* ═══ OBSCURA ARCHIVE TOKENS (PRO) ═══ */
+    --panel-bg: rgba(10, 10, 10, 0.45);
+    --panel-border: rgba(255, 255, 255, 0.04);
+    --glass-blur: blur(24px);
+    --glass-shadow: 0 40px 80px rgba(0,0,0,0.8);
+    --physics-bounce: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), background 0.4s ease;
 }
 
-* { margin: 0; padding: 0; box-sizing: border-box; }
+/* ═══ GLOBAL RESET & SOFT EDGES (Revertido por petición) ═══ */
+* { 
+    margin: 0; 
+    padding: 0; 
+    box-sizing: border-box; 
+}
 
 /* ═══ GLOBAL SELECTION ═══ */
 ::selection {
@@ -70,19 +74,9 @@ body {
     padding-bottom: 25rem;
 }
 
-/* ═══ CYBERMÁGICO GRAIN OVERLAY ═══ */
+/* ═══ CYBERMÁGICO GRAIN OVERLAY: ELIMINADO PARA CLARIDAD TOTAL PRO ═══ */
 body::before {
-    content: '';
-    position: fixed;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    z-index: 10000;
-    pointer-events: none;
-    opacity: 0.04;
-    mix-blend-mode: overlay;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-    background-repeat: repeat;
-    background-size: 200px 200px;
+    display: none;
 }
 
 h1, h2, h3, h4, .quote { font-family: 'Cinzel', serif; }
@@ -137,54 +131,87 @@ h1, h2, h3, h4, .quote { font-family: 'Cinzel', serif; }
     transform: translateY(0);
 }
 
-/* Header & Golden Rule */
-.hero { text-align: center; margin-bottom: 3rem; }
-.hero h1 { font-size: clamp(2.5rem, 5vw, 4rem); color: #e2e8f0; text-shadow: 0 2px 10px rgba(255,255,255,0.2); letter-spacing: 2px; }
-.hero h2 { color: var(--color-gold); font-size: clamp(1.2rem, 3vw, 1.8rem); margin-bottom: 2rem; }
+/* Header & Golden Rule: Obscura Refined */
+.hero { text-align: center; margin-bottom: 5rem; padding: 2rem; }
+.hero h1 { 
+    font-size: clamp(3rem, 6vw, 5rem); 
+    color: #fff; 
+    letter-spacing: 12px; 
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+}
+.hero h2 { 
+    color: var(--color-gold); 
+    font-size: clamp(1rem, 2.5vw, 1.4rem); 
+    letter-spacing: 6px;
+    text-transform: uppercase;
+    margin-bottom: 3rem;
+    opacity: 0.9;
+}
 .golden-rule {
-    background: rgba(15, 23, 42, 0.35);
-    border: 1px solid rgba(245, 158, 11, 0.2);
-    padding: 1.5rem;
-    border-radius: 12px;
-    margin: 2rem auto;
-    max-width: 800px;
-    backdrop-filter: var(--glass-blur);
-    -webkit-backdrop-filter: var(--glass-blur);
-    box-shadow: var(--glass-shadow-sm);
+    background: rgba(10, 10, 10, 0.6);
+    border: 1px solid rgba(179, 135, 40, 0.15);
+    padding: 2.5rem;
+    margin: 3rem auto;
+    max-width: 900px;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: 0 50px 100px rgba(0,0,0,0.6);
+    position: relative;
+    overflow: hidden;
+}
+.golden-rule::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; width: 4px; height: 100%;
+    background: var(--color-gold);
+    opacity: 0.6;
 }
 .golden-rule h3 { color: var(--color-gold); font-size: 1.3rem; margin-bottom: 1rem; text-align: center; }
 .golden-rule p { font-size: 1rem; color: #cbd5e1; }
 .door-glow { position: absolute; top: 0; left: 0; right: 0; bottom: 0; border-radius: 16px; opacity: 0; transition: opacity 0.3s; z-index: -1; }
 
-/* Doors (Home Nav) */
+/* Archival Slabs (Home Nav) */
 .archetypes-nav {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 2rem;
-    margin-top: 3rem;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 3rem;
+    margin-top: 4rem;
 }
 .arch-door {
     position: relative;
-    background: var(--panel-bg);
-    border: 1px solid var(--panel-border);
-    border-radius: 16px;
-    padding: 3rem 1.5rem;
+    background: rgba(15, 15, 15, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.03);
+    padding: 4rem 2rem;
     cursor: pointer;
-    backdrop-filter: var(--glass-blur);
-    -webkit-backdrop-filter: var(--glass-blur);
-    transition: var(--physics-bounce);
-    color: white;
+    backdrop-filter: blur(30px);
+    -webkit-backdrop-filter: blur(30px);
+    transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), background 0.4s ease;
+    color: #fff;
     text-align: center;
     z-index: 1;
-    box-shadow: var(--glass-shadow);
+    box-shadow: 0 30px 60px rgba(0,0,0,0.5);
 }
-.arch-door:hover { transform: translateY(-10px) scale(1.05); z-index: 2; box-shadow: 0 40px 80px rgba(0,0,0,0.7), inset 0 1px 0px rgba(255,255,255,0.2); }
-.door-aggro:hover .door-glow { box-shadow: 0 0 30px rgba(239, 68, 68, 0.4); opacity: 1; border-color: var(--color-red); }
-.door-control:hover .door-glow { box-shadow: 0 0 30px rgba(59, 130, 246, 0.4); opacity: 1; border-color: var(--color-blue); }
-.door-midrange:hover .door-glow { box-shadow: 0 0 30px rgba(34, 197, 94, 0.4); opacity: 1; border-color: var(--color-green); }
-.door-tempo:hover .door-glow { box-shadow: 0 0 30px rgba(168, 85, 247, 0.4); opacity: 1; border-color: var(--color-purple); }
-.door-combo:hover .door-glow { box-shadow: 0 0 30px rgba(245, 158, 11, 0.4); opacity: 1; border-color: var(--color-gold); }
-.door-ramp:hover .door-glow { box-shadow: 0 0 30px rgba(6, 182, 212, 0.4); opacity: 1; border-color: #06b6d4; }
+.arch-door:hover { 
+    transform: translateY(-20px) scale(1.02); 
+    background: rgba(25, 25, 25, 0.5);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+.arch-door::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; width: 100%; height: 0;
+    transition: height 0.6s ease;
+    z-index: -1;
+    opacity: 0.1;
+}
+
+.door-aggro:hover::after { height: 100%; background: var(--color-red); }
+.door-control:hover::after { height: 100%; background: var(--color-blue); }
+.door-midrange:hover::after { height: 100%; background: var(--color-green); }
+.door-tempo:hover::after { height: 100%; background: var(--color-purple); }
+.door-combo:hover::after { height: 100%; background: var(--color-gold); }
+.door-ramp:hover::after { height: 100%; background: #06b6d4; }
 
 .arch-door .icon { font-size: 3.5rem; display: block; margin-bottom: 1rem; }
 .arch-door h3 { font-size: clamp(1.2rem, 4vw, 1.8rem); margin-bottom: 0.5rem; line-height: 1.2; word-wrap: break-word;}
@@ -240,21 +267,31 @@ h1, h2, h3, h4, .quote { font-family: 'Cinzel', serif; }
 .selection-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.65); backdrop-filter: blur(12px) saturate(120%); -webkit-backdrop-filter: blur(12px) saturate(120%); z-index: 100; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
 .selection-overlay.active { opacity: 1; pointer-events: auto; }
 
-/* ═══ MODAL BOX — TRUE GLASSMORPHISM ═══ */
+/* ═══ MODAL BOX — TRUE OBSCURA ═══ */
 .modal-box {
-    background: rgba(15, 23, 42, 0.35);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    border-radius: 20px;
-    padding: 2.5rem;
-    width: 90%;
-    max-width: 500px;
-    text-align: center;
+    background: rgba(5, 5, 5, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 4rem;
+    width: 95%;
+    max-width: 600px;
+    text-align: left; /* Archival technical feel */
     position: relative;
-    backdrop-filter: var(--glass-blur);
-    -webkit-backdrop-filter: var(--glass-blur);
-    box-shadow: var(--glass-shadow);
+    backdrop-filter: blur(40px);
+    -webkit-backdrop-filter: blur(40px);
+    box-shadow: 0 0 0 10px rgba(0,0,0,1), 0 50px 150px rgba(0,0,0,0.9);
     animation: modalEnter 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
+
+.modal-box h2 {
+    font-family: 'Cinzel', serif;
+    font-size: 2rem;
+    color: var(--color-gold);
+    margin-bottom: 2rem;
+    letter-spacing: 4px;
+    border-bottom: 2px solid rgba(179, 135, 40, 0.2);
+    padding-bottom: 1rem;
+}
+
 @keyframes modalEnter {
     from { opacity: 0; transform: scale(0.92) translateY(20px); }
     to { opacity: 1; transform: scale(1) translateY(0); }
@@ -555,30 +592,56 @@ h1, h2, h3, h4, .quote { font-family: 'Cinzel', serif; }
     perspective: 1500px;
 }
 
-#intro-video-bg {
+/* Fondo de video dinámico Global (Doble Buffer Crossfade) */
+.video-bg-layer {
     position: fixed;
     top: 50%;
     left: 50%;
     width: 100vw;
     height: 100vh;
     transform: translate(-50%, -50%);
-    object-fit: contain; /* En PC siempre vemos el video completo */
-    background-color: #050505; /* Fondo negro profundo para huecos */
-    z-index: -5;
-    opacity: 0.25; /* Aumentado ligeramente para que se aprecie mejor (Nítido) */
-    transition: opacity 1.5s cubic-bezier(0.4, 0, 0.2, 1), filter 1.5s ease;
+    object-fit: contain; /* Volvemos a contain para que el usuario vea el video al completo */
+    background-color: #000;
+    z-index: 0; /* Delante del body pero detrás de la UI (v-index: 1+) */
+    opacity: 0;
+    transition: opacity 2s cubic-bezier(0.4, 0, 0.2, 1);
     pointer-events: none;
 }
 
-/* Modo Intro: Video al 100% */
-body.on-intro #intro-video-bg {
+/* El primer video empieza visible con la animación de nitidez total */
+#video-bg-1.active-layer {
+    opacity: 1; /* Opacidad real */
+    animation: fadeInVideoPRO 3s ease-in;
+}
+
+#video-bg-2.active-layer {
     opacity: 1;
 }
 
-/* 🎭 MODO ÉPICO IA: Ajuste de nitidez y brillo cuando la IA piensa */
-body.ai-thinking-mode #intro-video-bg {
+@keyframes fadeInVideoPRO {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Modo Intro: Asegurar nitidez absoluta y limpieza de botones flotantes */
+body.on-intro .video-bg-layer.active-layer {
+    opacity: 1 !important;
+    filter: none;
+}
+
+body.on-intro .floating-btn {
+    display: none !important; /* Limpieza total de UI en la intro */
+}
+
+/* Estado Atenuado (Biblioteca activa): Solo aquí bajamos la opacidad */
+body:not(.on-intro):not(.cinema-mode-active):not(.ai-thinking-mode) .video-bg-layer.active-layer {
+    opacity: 0.25; /* El video se vuelve sutil para dejar leer el contenido */
+}
+
+/* 🎭 MODO ÉPICO IA */
+body.ai-thinking-mode .video-bg-layer.active-layer {
     opacity: 1;
-    filter: saturate(1.2) contrast(1.1); /* Sutil, sin oscurecer ni saturar en exceso */
+    filter: saturate(1.2) contrast(1.1);
     z-index: -1;
     animation: epicGlow 4s infinite alternate;
 }
@@ -588,30 +651,12 @@ body.ai-thinking-mode #intro-video-bg {
     to { filter: saturate(1.3) contrast(1.15) brightness(1.1); }
 }
 
-/* Forzar que los paneles de cristal se vuelvan más translúcidos en modo épico */
-body.ai-thinking-mode .container.view,
-body.ai-thinking-mode .ai-panel {
-    background: rgba(15, 23, 42, 0.2) !important;
-    backdrop-filter: blur(8px) saturate(180%) !important;
-}
-
-/* 📱 En Móvil mantenemos el recorte inmersivo si se prefiere */
-@media (max-width: 768px) {
-    #intro-video-bg {
-        object-fit: cover; 
-    }
-}
-
-/* 🎬 MODO CINE (CINEMA MODE): Foco total en el video */
-body.cinema-mode-active {
-    overflow: hidden; /* Evita scroll mientras disfrutamos del video */
-}
-
-body.cinema-mode-active #intro-video-bg {
+/* 🎬 MODO CINE (CINEMA MODE) */
+body.cinema-mode-active .video-bg-layer.active-layer {
     opacity: 1 !important;
-    filter: none !important; /* Eliminamos cualquier filtro de saturación o contraste */
-    animation: none !important; /* Detenemos la animación epicGlow para que el video sea 100% nítido */
-    z-index: 99998 !important; /* Justo debajo del botón de cerrar */
+    filter: none !important;
+    animation: none !important;
+    z-index: 99998 !important;
 }
 
 body.cinema-mode-active .container.view,
@@ -649,12 +694,7 @@ body.cinema-mode-active .cinema-toggle:hover {
 }
 
 .intro-overlay::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: linear-gradient(to top, rgba(10,10,12,0.8) 0%, rgba(10,10,12,0.1) 50%, rgba(10,10,12,0.4) 100%);
-    z-index: 1;
-    pointer-events: none;
+    display: none; /* Eliminada la neblina negra por petición del usuario */
 }
 /* Zoom muy sutil a las cenizas del fondo */
 @keyframes cinematicZoom {
@@ -662,15 +702,10 @@ body.cinema-mode-active .cinema-toggle:hover {
     100% { transform: scale(1.05); }
 }
 #epic-canvas {
-    position: absolute;
-    top: 0; left: 0;
-    width: 100vw; height: 100vh;
-    z-index: 3;
-    pointer-events: none;
-    mix-blend-mode: screen; /* Para que las brasas destaquen más fuertes sobre la niebla */
+    display: none; /* Partículas eliminadas para limpieza total */
 }
 
-/* El Contenido Frontal */
+/* Contenido Frontal: La Estética del Oráculo */
 .intro-content {
     position: relative;
     z-index: 4;
@@ -1144,38 +1179,28 @@ details[open] {
  * ═══════════════════════════════════════════════════════════════ */
 
 .forge-banner {
-    background: rgba(15, 23, 42, 0.35);
-    border: 1px solid rgba(245, 158, 11, 0.2);
-    border-radius: 20px;
-    padding: 3rem;
-    margin-bottom: 3rem;
+    background: rgba(10, 10, 10, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.05); /* Minimalist archival border */
+    padding: 4rem;
+    margin-bottom: 5rem;
     position: relative;
     overflow: hidden;
-    backdrop-filter: var(--glass-blur);
-    -webkit-backdrop-filter: var(--glass-blur);
-    box-shadow: var(--glass-shadow);
-    animation: forgeAppear 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    backdrop-filter: blur(40px);
+    -webkit-backdrop-filter: blur(40px);
+    box-shadow: 0 60px 120px rgba(0,0,0,0.8);
+    animation: forgeAppearPRO 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 }
-@keyframes forgeAppear {
-    from { opacity: 0; transform: translateY(30px) scale(0.98); }
-    to { opacity: 1; transform: translateY(0) scale(1); }
+@keyframes forgeAppearPRO {
+    from { opacity: 0; transform: translateY(40px); filter: blur(10px); }
+    to { opacity: 1; transform: translateY(0); filter: blur(0); }
 }
+/* Barra de estado técnica en la parte superior */
 .forge-banner::before {
     content: '';
     position: absolute;
-    top: 0; left: 0; right: 0; height: 3px;
-    background: linear-gradient(to right, transparent, var(--color-gold), #ef4444, #3b82f6, #22c55e, var(--color-gold), transparent);
-    animation: forgeShimmer 4s ease-in-out infinite;
-}
-@keyframes forgeShimmer {
-    0%, 100% { opacity: 0.6; }
-    50% { opacity: 1; }
-}
-.forge-banner::after {
-    content: '';
-    position: absolute;
-    bottom: 0; left: 0; right: 0; height: 1px;
-    background: linear-gradient(to right, transparent, rgba(245, 158, 11, 0.3), transparent);
+    top: 0; left: 0; width: 100%; height: 2px;
+    background: linear-gradient(to right, transparent, var(--color-gold), transparent);
+    opacity: 0.4;
 }
 
 /* Header de la Forja */
@@ -1184,14 +1209,9 @@ details[open] {
     margin-bottom: 2.5rem;
 }
 .forge-icon {
-    font-size: 3.5rem;
-    margin-bottom: 0.5rem;
-    filter: drop-shadow(0 0 15px rgba(245, 158, 11, 0.5));
-    animation: forgePulse 3s ease-in-out infinite;
-}
-@keyframes forgePulse {
-    0%, 100% { transform: scale(1); filter: drop-shadow(0 0 15px rgba(245, 158, 11, 0.5)); }
-    50% { transform: scale(1.1); filter: drop-shadow(0 0 25px rgba(245, 158, 11, 0.8)); }
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    opacity: 0.9;
 }
 .forge-title {
     font-family: 'Cinzel', serif;
@@ -1249,23 +1269,27 @@ details[open] {
     gap: 2rem;
 }
 
-/* Niveles */
+/* Niveles de Forja: Slabs de Archivo */
 .forge-level {
-    background: rgba(0, 0, 0, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    border-radius: 16px;
-    padding: 2rem;
-    transition: var(--physics-bounce);
+    background: rgba(20, 20, 20, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    padding: 3rem;
     position: relative;
     overflow: hidden;
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    transition: background 0.4s ease;
+}
+.forge-level:hover {
+    background: rgba(25, 25, 25, 0.6);
 }
 .forge-level::before {
     content: '';
     position: absolute;
-    top: 0; left: 0; width: 4px; height: 100%;
-    border-radius: 4px 0 0 4px;
+    top: 0; left: 0; width: 3px; height: 100%;
+    background: var(--color-gold);
+    opacity: 0.3;
+}
 }
 .forge-level:hover {
     border-color: rgba(255, 255, 255, 0.15);
@@ -2134,4 +2158,254 @@ details[open] {
     .pocket-overlay {
         padding: 1rem;
     }
+}
+
+/* ----------------------------------------------------
+ *  Obsidian Loading Portal (Eldritch Brutalism)
+ * ---------------------------------------------------- */
+.loading-portal {
+    background: #131313;
+    border: 1px solid var(--color-purple);
+    border-radius: 0; /* Brutalist: esquinas afiladas */
+    padding: 3rem;
+    width: 90%;
+    max-width: 600px;
+    text-align: center;
+    position: relative;
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    box-shadow: 0 50px 100px rgba(0,0,0,0.9), 0 0 30px rgba(168, 85, 247, 0.2);
+    animation: portalEnter 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    z-index: 1000;
+}
+
+@keyframes portalEnter {
+    from { opacity: 0; transform: scale(0.95); filter: blur(10px); }
+    to { opacity: 1; transform: scale(1); filter: blur(0); }
+}
+
+.portal-header {
+    border-bottom: 1px solid rgba(168, 85, 247, 0.2);
+    padding-bottom: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.portal-title {
+    font-family: 'Cinzel', serif;
+    color: var(--color-purple);
+    font-size: 0.9rem;
+    letter-spacing: 5px;
+    font-weight: 700;
+}
+
+.portal-video-container {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    background: #000;
+    overflow: hidden;
+    position: relative;
+    border: 1px solid rgba(255,255,255,0.05);
+}
+
+.portal-video-container video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.8;
+}
+
+.portal-status {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+}
+
+.portal-status h2 {
+    font-family: 'Cinzel', serif;
+    font-size: 1.4rem;
+    color: var(--color-gold);
+    letter-spacing: 2px;
+    margin: 0;
+    text-shadow: 0 0 10px rgba(245, 158, 11, 0.4);
+}
+
+.rune-container {
+    animation: runePulse 2s infinite alternate;
+}
+
+@keyframes runePulse {
+    from { transform: scale(1); opacity: 0.5; filter: drop-shadow(0 0 0px var(--color-gold)); }
+    to { transform: scale(1.3); opacity: 1; filter: drop-shadow(0 0 8px var(--color-gold)); }
+}
+
+.portal-hint {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    font-style: italic;
+}
+
+.portal-progress-bar {
+    width: 100%;
+    height: 4px;
+    background: rgba(255,255,255,0.05);
+    position: relative;
+    overflow: hidden;
+}
+
+.progress-fill {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 30%;
+    background: linear-gradient(to right, transparent, var(--color-purple), transparent);
+    animation: progressMove 2s infinite linear;
+}
+
+@keyframes progressMove {
+    0% { left: -30%; }
+    100% { left: 100%; }
+}
+
+/* ═══════════════════════════════════════════
+ *  ESTILOS DE SALIDA IA: LORE Y ANÁLISIS
+ * ═══════════════════════════════════════════ */
+.ai-analysis-box {
+    margin-top: 2rem;
+    padding: 2rem;
+    background: rgba(15, 12, 10, 0.8);
+    border: 1px solid var(--border-bronze);
+    border-radius: 12px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+.ai-analysis-box::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 4px;
+    background: linear-gradient(90deg, transparent, var(--color-gold), transparent);
+}
+
+.analysis-title {
+    font-family: 'Cinzel', serif;
+    color: var(--color-gold);
+    font-size: 1.3rem;
+    margin-bottom: 1.5rem;
+    text-align: center;
+    letter-spacing: 2px;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+
+.analysis-paragraph {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin-bottom: 1rem;
+}
+
+/* ═══════════════════════════════════════════
+ *  ESTILOS DEL TRIBUNAL: VEREDICTOS
+ * ═══════════════════════════════════════════ */
+#judgment-final-verdict h2 {
+    font-family: 'Cinzel', serif;
+    font-size: 1.5rem;
+    color: var(--color-gold);
+    margin: 2.5rem 0 1.2rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(245, 158, 11, 0.3);
+    text-transform: uppercase;
+    letter-spacing: 3px;
+}
+
+#judgment-final-verdict h2:first-of-type {
+    margin-top: 0;
+}
+
+/* Estilo para Auditoría (Problemas) */
+#judgment-final-verdict h2:contains("⚖️"), 
+#judgment-final-verdict h2:nth-of-type(1) {
+    color: #f87171; /* Rojo suave para advertencias */
+    border-bottom-color: rgba(239, 68, 68, 0.3);
+}
+
+/* Estilo para Conclusiones */
+#judgment-final-verdict h2:contains("📜"),
+#judgment-final-verdict h2:nth-of-type(2) {
+    color: var(--color-gold);
+}
+
+/* Estilo para Modificaciones */
+#judgment-final-verdict h2:contains("🛠️"),
+#judgment-final-verdict h2:nth-of-type(3) {
+    color: #4ade80; /* Verde para soluciones */
+    border-bottom-color: rgba(74, 222, 128, 0.3);
+}
+
+#judgment-final-verdict ul, #judgment-final-verdict ol {
+    padding-left: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+#judgment-final-verdict li {
+    color: #cbd5e1;
+    margin-bottom: 0.8rem;
+    line-height: 1.5;
+}
+
+#judgment-final-verdict strong {
+    color: #fff;
+    font-weight: 700;
+}
+
+/* ═══════════════════════════════════════════
+ *  BLOQUE DE LORE (CODEX) EN CADA MAZO
+ * ═══════════════════════════════════════════ */
+.deck-lore-block {
+    margin: 1rem 0 2rem;
+    padding: 1.5rem;
+    background: rgba(245, 158, 11, 0.05);
+    border-left: 3px solid var(--color-gold);
+    border-radius: 4px 12px 12px 4px;
+    font-style: italic;
+    position: relative;
+}
+
+.deck-lore-block::before {
+    content: '"';
+    position: absolute;
+    top: 0.5rem;
+    left: 0.5rem;
+    font-size: 3rem;
+    color: rgba(245, 158, 11, 0.1);
+    font-family: serif;
+    line-height: 1;
+}
+
+.codex-header {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-family: 'Cinzel', serif;
+    color: var(--color-gold);
+    font-size: 1rem;
+    margin-bottom: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.codex-content {
+    color: #94a3b8;
+    line-height: 1.6;
+    font-size: 0.95rem;
+}
+
+.codex-content strong {
+    color: var(--color-gold);
+    font-weight: 700;
 }

@@ -520,7 +520,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const introScreen = document.getElementById('intro-screen');
     const introVideo = document.getElementById('intro-video-bg');
     const introVideoFolder = 'videos/';
-    const introPool = ['Fridge.webm', 'Colors.webm'];
+    const introPool = ['Video Intro/download.webm'];
     const mainPool = [
         'Dragon-god_on_throne_202604131527.webm', 
         'Eldritch_titan_storm_202604131522.webm', 
@@ -540,36 +540,61 @@ document.addEventListener('DOMContentLoaded', () => {
         // ya no hace falta añadir clases manuales de fit por JS.
     }
 
-    let playNextVideo;
+    const videoLayers = [
+        document.getElementById('video-bg-1'),
+        document.getElementById('video-bg-2')
+    ];
+    let activeLayerIndex = 0;
 
-    if (introVideo) {
-        introVideo.muted = true; // Asegura que el navegador permita el autoplay
-        
+    if (videoLayers[0]) {
+        videoLayers.forEach(v => {
+            if (v) v.muted = true;
+        });
+
         playNextVideo = () => {
-            currentVideoIndex = (currentVideoIndex + 1) % currentPool.length;
-            const nextVideo = currentPool[currentVideoIndex];
-            console.log("🎞️ Cambiando a video:", nextVideo);
-            introVideo.src = `${introVideoFolder}${nextVideo}`;
-            applyVideoFit(nextVideo);
-            introVideo.load();
-            introVideo.play().catch(e => console.warn("Error al auto-reproducir:", e));
+            const nextIndex = (currentVideoIndex + 1) % currentPool.length;
+            const nextVideoFile = currentPool[nextIndex];
+            
+            // Capa que va a entrar (buffer) y capa que va a salir (activa)
+            const oldLayer = videoLayers[activeLayerIndex];
+            const newLayer = videoLayers[1 - activeLayerIndex];
+
+            console.log("🎞️ Haciendo Crossfade a:", nextVideoFile);
+
+            // 1. Cargar el nuevo video en la capa oculta
+            newLayer.src = `${introVideoFolder}${nextVideoFile}`;
+            newLayer.load();
+            
+            // 2. Cuando el video esté listo para reproducirse
+            newLayer.onplay = () => {
+                // Intercambiar clases de opacidad para el fundido
+                oldLayer.classList.remove('active-layer');
+                newLayer.classList.add('active-layer');
+                activeLayerIndex = 1 - activeLayerIndex;
+                currentVideoIndex = nextIndex;
+            };
+
+            newLayer.play().catch(e => {
+                console.warn("Re-intentando reproducción por interacción:", e);
+                // Si falla por autoplay, esperamos a que el usuario interactúe
+            });
         };
 
-        // Carga inicial
+        // Carga inicial (Solo en la capa 1)
         const firstVideo = currentPool[currentVideoIndex];
         console.log("🍿 Video inicial:", firstVideo);
-        introVideo.src = `${introVideoFolder}${firstVideo}`;
-        applyVideoFit(firstVideo);
-        introVideo.load();
-        introVideo.play().catch(e => console.warn("Error al iniciar video:", e));
-        
-        // Bucle secuencial: al terminar un video, pasa al siguiente
-        introVideo.addEventListener('ended', playNextVideo);
+        videoLayers[0].src = `${introVideoFolder}${firstVideo}`;
+        videoLayers[0].classList.add('active-layer');
+        videoLayers[0].load();
+        videoLayers[0].play().catch(e => console.warn("Error al iniciar video:", e));
 
-        // Fallback: si hay error cargando un video
-        introVideo.addEventListener('error', (e) => {
-            console.error("❌ Error cargando video:", currentPool[currentVideoIndex], e);
-            setTimeout(playNextVideo, 1000);
+        // Eventos para el bucle en ambas capas
+        videoLayers.forEach(v => {
+            if (v) v.addEventListener('ended', playNextVideo);
+            if (v) v.addEventListener('error', (e) => {
+                console.error("❌ Error en capa de video:", e);
+                setTimeout(playNextVideo, 1000);
+            });
         });
     }
 
@@ -612,6 +637,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const scryfallCache = new Map();
     const tooltip = document.getElementById('mtg-tooltip');
     const tooltipImg = document.getElementById('mtg-tooltip-img');
+    const aiLoadingModal = document.getElementById('ai-loading-modal');
+    const loadingVideoFridge = document.getElementById('loading-video-fridge');
 
     document.body.addEventListener('mouseover', async (e) => {
         const card = e.target.closest('.mtg-card');
@@ -909,9 +936,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    /* 
     if (introScreen && introScreen.style.display !== 'none') {
         initEpicCanvas();
     }
+    */
 
     const btnFormatStandard = document.getElementById('btn-format-standard');
     const btnFormatCommander = document.getElementById('btn-format-commander');
@@ -974,6 +1003,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (animationFrameId) cancelAnimationFrame(animationFrameId);
             homeScreen.classList.add('active-view');
+            
+            // 🔥 AUTOMATIZACIÓN MODO CINE: 100% Inmersivo al entrar
+            document.body.classList.add('cinema-mode-active');
+            console.log("🎬 Modo Cine Automático: Activado tras selección de formato.");
+
             if (format === 'commander') {
                 renderHomeDoors(commanderDatabase);
                 if (forgeBanner) forgeBanner.style.display = 'none';
@@ -984,8 +1018,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 2800);
     }
 
-    if (btnFormatStandard) btnFormatStandard.addEventListener('click', () => chooseFormat('standard'));
-    if (btnFormatCommander) btnFormatCommander.addEventListener('click', () => chooseFormat('commander'));
+    if (btnFormatStandard) btnFormatStandard.addEventListener('click', (e) => {
+        e.stopPropagation();
+        chooseFormat('standard');
+    });
+    if (btnFormatCommander) btnFormatCommander.addEventListener('click', (e) => {
+        e.stopPropagation();
+        chooseFormat('commander');
+    });
 
     // Nav: Open Battle Box
     btnOpenBB.addEventListener('click', () => {
@@ -1347,8 +1387,14 @@ Reglas ESTRICTAS de Commander:
 2. Regla Singleton: NO puedes repetir ninguna carta (salvo tierras básicas). SOLO 1 COPIA DE CADA CARTA.
 3. Identidad de Color: Todas las 99 cartas DEBEN pertenecer exclusivamente a la identidad de color del Comandante.
 
-RAREZAS Y FORMATO: Escribe cada carta como: "Cantidad [[Nombre exacto en Inglés|Rareza]]".
+RAREZAS Y FORMATO: Escribe cada carta como: "Cantidad [[Nombre exacto en Inglés|Rareza]]". 
 Rarezas: C (Común), U (Infrecuente), R (Rara), M (Mítica).
+
+### ELABORACIÓN REQUERIDA:
+Antes de la lista de cartas, escribe un bloque llamado "📜 Codex de la Bóveda" donde expliques:
+- La narrativa/lore del mazo de forma épica.
+- 3 Claves estratégicas para ganar.
+- El nivel de poder estimado.
 
 Parámetros para el mazo:
 - Arquetipo EDH: ${d.archetype} -> Variante: ${d.subArchetype}
@@ -1356,13 +1402,18 @@ Parámetros para el mazo:
 - Tribu Requerida: ${d.tribe === 'N/A' || d.tribe === '' ? 'La óptima' : d.tribe}
 - Instrucciones: ${d.extraNotes || 'Ninguna.'}
 
-Salida: Pásame la lista final estructurada con desplegables para cada sección de cartas.`;
+Salida: Lista estructurada con su Lore integrado.`;
                 } else {
                     prompt = `Actúa como un experto jugador histórico y pro-builder de Magic: The Gathering.
-Nuestra misión es diseñar una lista EXCELENTE de 60 cartas para el formato "Kitchen Table Magic" de altísimo nivel.
+Nuestra misión es diseñar una lista EXCELENTE de 60 cartas de alto nivel.
 
 RAREZAS Y FORMATO: Escribe cada carta como: "Cantidad [[Nombre exacto en Inglés|Rareza]]".
 Rarezas: C (Común), U (Infrecuente), R (Rara), M (Mítica).
+
+### ELABORACIÓN REQUERIDA:
+Antes de la lista de cartas, incluye un bloque "📜 Codex de la Bóveda" con:
+- Una descripción breve y temática del mazo.
+- La estrategia ganadora y sinergias clave.
 
 Parámetros:
 - Arquetipo Principal: ${d.archetype} -> Variante: ${d.subArchetype}
@@ -1370,7 +1421,7 @@ Parámetros:
 - Raza/Tribu Requerida: ${d.tribe === 'N/A' || d.tribe === '' ? 'La óptima' : d.tribe}
 - Instrucciones extra obligatorias: ${d.extraNotes || 'Ninguna.'}
 
-Salida esperada: Lista limpia y estructurada.`;
+Salida esperada: Lista limpia y estructurada con su Lore integrado.`;
                 }
 
                 // Copy to clipboard
@@ -1423,7 +1474,7 @@ A continuación, los parámetros exigidos:\n\n`;
 - Notas extra: ${d.extraNotes || 'Ninguna restricción.'}\n\n`;
             });
 
-            masterPrompt += `Hazme un pequeño resumen estratégico de su sinergia cruzada y otórgame las ${battleBox.length} listas limpias y de corrido listas para imprimir.`;
+            masterPrompt += `\nGenera un output altamente ELABORADO, narrativo y profesional que asombre al usuario. No olvides el bloque "📜 Codex de la Bóveda" para cada uno.`;
 
             navigator.clipboard.writeText(masterPrompt).then(() => {
                 const originalText = btnMaster.textContent;
@@ -1459,70 +1510,74 @@ A continuación, los parámetros exigidos:\n\n`;
             aiResults.style.display = 'block';
             viewControls.style.display = 'flex';
 
-            // Actualizar estado de botones
             if (view === 'guide') {
                 btnViewGuide.style.background = 'rgba(245, 158, 11, 0.4)';
                 btnViewList.style.background = 'transparent';
-                
-                const chunks = lastAiResponse.split(/\n---\n/).filter(c => c.trim().length > 10);
-                if (chunks.length > 1) {
-                    // Si hay varios mazos, los colapsamos individualmente incluso en vista guía
-                    let fullHtml = '';
-                    chunks.forEach(chunk => {
-                        const lines = chunk.trim().split('\n');
-                        let titleLine = lines[0].replace(/#/g, '').trim() || "Mazo Generado";
-                        fullHtml += `
-                            <div class="ai-deck-box collapsible-deck">
-                                <details>
-                                    <summary class="deck-summary">
-                                        <span>${titleLine}</span>
-                                        <svg class="chevron" viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><path d="M6 9l6 6 6-6"/></svg>
-                                    </summary>
-                                    <div class="deck-content-inner">
-                                        ${markdownToHtml(chunk.trim())}
-                                    </div>
-                                </details>
-                            </div>
-                        `;
-                    });
-                    aiResults.innerHTML = fullHtml;
-                } else {
-                    const html = markdownToHtml(lastAiResponse);
-                    aiResults.innerHTML = `<div class="ai-deck-box">${html}</div>`;
-                }
             } else {
                 btnViewList.style.background = 'rgba(245, 158, 11, 0.4)';
                 btnViewGuide.style.background = 'transparent';
+            }
 
-                const chunks = lastAiResponse.split(/\n---\n/).filter(c => c.trim().length > 10);
-                const container = document.createElement('div');
-                container.className = 'ai-results-list';
+            const chunks = lastAiResponse.split(/\n\s*[-*]{3,}\s*\n/).filter(c => c.trim().length > 10);
+            const container = document.createElement('div');
+            container.className = view === 'list' ? 'ai-results-list' : '';
+            let analysisHtml = '';
+            let mainHtml = '';
 
-                chunks.forEach(chunk => {
-                    const deckDiv = document.createElement('div');
-                    deckDiv.className = 'ai-deck-box collapsible-deck';
-                    
-                    // Extraer título sugerido y limpiar
-                    const lines = chunk.trim().split('\n');
+            chunks.forEach(chunk => {
+                const trimmed = chunk.trim();
+                if (trimmed.includes('[[')) {
+                    const lines = trimmed.split('\n');
                     let titleLine = lines[0].replace(/#/g, '').trim() || "Mazo Generado";
-                    
-                    deckDiv.innerHTML = `
-                        <details>
-                            <summary class="deck-summary">
-                                <span>${titleLine}</span>
-                                <svg class="chevron" viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><path d="M6 9l6 6 6-6"/></svg>
-                            </summary>
-                            <div class="deck-content-inner">
-                                ${markdownToHtml(chunk.trim())}
-                            </div>
-                        </details>
+                    const deckHtml = `
+                        <div class="ai-deck-box collapsible-deck">
+                            <details>
+                                <summary class="deck-summary">
+                                    <span>${titleLine}</span>
+                                    <svg class="chevron" viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><path d="M6 9l6 6 6-6"/></svg>
+                                </summary>
+                                <div class="deck-content-inner">
+                                    ${markdownToHtml(trimmed)}
+                                </div>
+                            </details>
+                        </div>
                     `;
-                    container.appendChild(deckDiv);
-                });
+                    if (view === 'list') {
+                        const temp = document.createElement('div');
+                        temp.innerHTML = deckHtml;
+                        container.appendChild(temp.firstElementChild);
+                    } else {
+                        mainHtml += deckHtml;
+                    }
+                } else if (trimmed.length > 40 && !trimmed.toLowerCase().includes('count:') && !trimmed.toLowerCase().includes('checking:')) {
+                    // Es análisis/lore general (fuera de bloques de mazo)
+                    analysisHtml += `<div class="analysis-paragraph">${markdownToHtml(trimmed)}</div>`;
+                }
+            });
+
+            // Post-procesar para añadir estilos premium a bloques de Codex internos
+            const stylizedMainHtml = mainHtml.replace(/📜 (Codex|Análisis|Lore)[^]*?\n\n/gi, (match) => {
+                return `<div class="deck-lore-block">
+                    <div class="codex-header">📜 CODEX DE LA BÓVEDA</div>
+                    <div class="codex-content">${markdownToHtml(match.replace(/📜 (Codex|Análisis|Lore)/gi, '').trim())}</div>
+                </div>`;
+            });
+
+            if (view === 'guide') {
+                aiResults.innerHTML = stylizedMainHtml;
+            } else {
                 aiResults.appendChild(container);
             }
-            
 
+            if (analysisHtml) {
+                const analysisDiv = document.createElement('div');
+                analysisDiv.className = 'ai-analysis-box archive-lore-section';
+                analysisDiv.innerHTML = `
+                    <h3 class="analysis-title">📜 Archivos de la Bóveda: Análisis y Lore</h3>
+                    <div class="analysis-content">${analysisHtml}</div>
+                `;
+                aiResults.appendChild(analysisDiv);
+            }
         }
 
         btnViewGuide.addEventListener('click', () => renderAiResults('guide'));
@@ -1664,25 +1719,82 @@ ${isSingle ? 'Asegúrate de que el mazo tenga una identidad clara y sea divertid
 A continuación, los parámetros exigidos:\n\n`;
 
             battleBox.forEach((d, i) => {
-                const isCommander = d.format === 'commander'; // ✅ Ahora usa el campo persistido
+                const isCommander = d.format === 'commander';
                 const cardCount = isCommander ? 100 : 60;
-                
-                promptIA += `--- [MAZO ${i+1}]: ${d.archetype.toUpperCase()} -> Variante: ${d.subArchetype} ---
+
+                // --- 🎨 TRIPLE IDENTIFICACIÓN DE COLOR (Icono | Sigla | Nombre) ---
+                const colorMap = {
+                    '⚪': 'W - White',
+                    '🔵': 'U - Blue',
+                    '⚫': 'B - Black',
+                    '🔴': 'R - Red',
+                    '🟢': 'G - Green',
+                    '⚙️': 'C - Colorless'
+                };
+                let enhancedColors = d.colorsFreq;
+                for (const [emoji, text] of Object.entries(colorMap)) {
+                    enhancedColors = enhancedColors.replace(emoji, `${emoji} (${text}) `);
+                }
+
+                // --- 🧠 LÓGICA CONTEXTUAL DE ARTEFACTOS E INCOLORO ---
+                const hasColorless = d.colorsFreq.includes('⚙️');
+                const colorCount = (d.colorsFreq.match(/⚪|🔵|⚫|🔴|🟢/g) || []).length;
+                const isMulticolor = colorCount >= 3;
+                let contextualAdvice = "";
+
+                if (isMulticolor) {
+                    contextualAdvice += `\n- REGLA DE ESTABILIDAD: Al ser un mazo de ${colorCount} colores, diseña una base de maná profesional (Duals, Fetchlands, Triomes) e INCLUYE molienda o artefactos de fijación (Mana Rocks/Talismanes) para asegurar la jugabilidad.`;
+                }
+
+                if (hasColorless) {
+                    if (isMulticolor) {
+                        contextualAdvice += `\n- REGLA DE MANÁ HÍBRIDO: Este mazo es Multicolor E Incoloro. Usa artefactos de soporte que fijen colores pero mantén cartas temáticas incoloras. Asegura tierras que produzcan maná incoloro específico (C) si hay costes que lo requieran.`;
+                    } else if (colorCount === 0) {
+                        contextualAdvice += `\n- REGLA DE VACÍO: Mazo 100% Incoloro. La base de maná debe ser incolora de utilidad extrema (Wastes, Tron lands, etc.). El mazo debe ser temático de artefactos o Eldrazi.`;
+                    } else {
+                        contextualAdvice += `\n- REGLA TEMÁTICA: El componente Incoloro es parte central de la estrategia. Usa artefactos no solo como soporte, sino como piezas clave del motor.`;
+                    }
+                }
+
+                if (d.isForged) {
+                    // Mazo Forjado: Extraer datos del string pipe (Carta Clave | Lore | Arquetipo | Curva | Poder | Extra)
+                    const forgedData = (d.extraNotes || "").split(' | ');
+                    const [cartaClave, lore, arquetipo, curva, poder, extra] = forgedData;
+
+                    promptIA += `--- [MAZO ${i+1}]: MAZO FORJADO INDIVIDUAL ---
+- FORMATO: ${isCommander ? 'COMMANDER (100 cartas, Singleton)' : 'STANDARD/KITCHEN (60 cartas, Máx 4 copias)'}
+- IDENTIDAD DE COLOR EXIGIDA: ${enhancedColors}
+- CARTA CLAVE / COMANDANTE OBLIGATORIO: [[${cartaClave || 'Libre'}]]
+- ESTRATEGIA EXIGIDA: ${arquetipo || d.archetype}
+- NARRATIVA OBLIGATORIA (LORE): ${lore || 'Sin lore específico'}
+- INSTRUCCIÓN DE CURVA: ${curva || 'Equilibrada'}
+- NIVEL DE PODER / PRESUPUESTO: ${poder || 'Competitivo'}
+- NOTAS ADICIONALES: ${extra || 'Ninguna'} ${contextualAdvice}
+- OBJETIVO: Respeta CADA parámetro. No ignores ningún color de la identidad y asegúrate de que el mazo sea mecánicamente sólido.\n\n`;
+                } else {
+                    // Mazo Estándar (Enciclopedia): Lógica original mejorada con contexto
+                    promptIA += `--- [MAZO ${i+1}]: ${d.archetype.toUpperCase()} -> Variante: ${d.subArchetype} ---
 - Objetivos de diseño: Crear un mazo profesional de EXACTAMENTE ${cardCount} cartas.
-${isCommander ? '- REGLA CRÍTICA EDH: Mazo de 100 cartas (1 Comandante + 99 cartas) y REGLA SINGLETON (solo 1 copia de cada carta salvo tierras básicas).' : '- Formato Standard/Kitchen Table: Se permiten hasta 4 copias por carta.'}
-- Estructura: No rellenes con tierras básicas al azar. Diseña una curva de maná y un ratio de hechizos/tierras (aprox. 38% de tierras) que sea altamente competitivo y temático.
-- Colores obligados: ${d.colorsFreq}
-- Tribu requerida (si aplica): ${d.tribe === 'N/A' || d.tribe === '' ? 'Óptima para estrategia' : d.tribe}
+${isCommander ? '- REGLA CRÍTICA EDH: Mazo de 100 cartas (1 Comandante + 99 cartas) y REGLA SINGLETON (solo 1 copia de cada carta salvo tierras básicas).' : '- Formato Standard/Kitchen Table: Se permiten hasta 4 copias por carta. TOTAL EXACTO: 60 cartas.'}
+- Estructura sugerida: ${isCommander ? '~37 tierras' : '~23 tierras (ajusta según curva) y 37 hechizos'}.
+- No rellenes con tierras básicas al azar. Diseña una curva de maná y un ratio de hechizos/tierras proporcional.
+- Colores obligados: ${enhancedColors}
+- Tribu requerida (si aplica): ${d.tribe === 'N/A' || d.tribe === '' ? 'Óptima para estrategia' : d.tribe} ${contextualAdvice}
 - Notas extra mías: ${d.extraNotes || 'Ninguna restricción.'}\n\n`;
+                }
             });
 
-            promptIA += `\n🔴 DIRECTRICES MAESTRAS DE EQUILIBRIO Y FORMATO:
+            promptIA += `\n🔴 DIRECTRICES MAESTRAS DE PRECISIÓN Y ELABORACIÓN:
 1. RAREZA OBLIGATORIA: Por cada carta, usa el formato EXACTO: "Cantidad [[Nombre en Inglés|R]]" (donde R es C, U, R o M).
-2. CALIDAD SOBRE RELLENO: No quiero listas genéricas. Selecciona cada carta con intención. El total de ${battleBox.some(d => d.format === 'commander') ? '60 o 100' : '60'} cartas debe alcanzarse mediante una selección meditada.
-3. EQUILIBRIO "BATTLE BOX": Los mazos deben estar diseñados para enfrentarse entre sí.
-4. ESTRUCTURA: Los mazos DEBEN separarse claramente con "---".
-5. CABECERA: La PRIMERA LÍNEA de cada mazo debe ser su nombre seguido de sus iconos de color (ej: # Goblins Rojo-Verde 🔴🟢).`;
-            promptIA += `\n7. ANTI-ESTANCAMIENTO (VARIEDAD): Evita caer en los "Staples" aburridos y obvios del arquetipo (ej: no pongas Lightning Bolt en todo mazo rojo, ni Counterspell en todo mazo azul). Intenta elegir al menos un 30% de cartas inusuales, favoritas de la comunidad (Hidden Gems) o cartas temáticas que encajen con la tribu/lore pedido, en lugar del paquete genérico de internet.`;
+2. RECUENTO EXACTO: El mazo debe tener el número solicitado (${battleBox.some(d => d.format === 'commander') ? '100' : '60'} cartas).
+3. 📜 CODEX DE LA BÓVEDA: ANTES de cada lista de cartas de cada mazo, incluye un bloque obligatorio de "Codex" que contenga:
+   - Fragmento de Lore/Narrativa épica del mazo.
+   - 3-4 Puntos clave de estrategia y sinergias (Piedras Angulares).
+   - Cómo pilotar el mazo para ganar.
+4. NO OMISIONES: Prohibido usar "..." o saltar cartas. Lista cada una de ellas.
+5. ESTRUCTURA: Los mazos DEBEN separarse claramente con una línea de tres guiones en su propia línea (---).
+6. CABECERA OBLIGATORIA: La PRIMERA LÍNEA de cada mazo debe ser un título de Markdown (ej: # Goblins Rojo-Verde 🔴🟢).
+7. OUTPUT ELABORADO: Tu respuesta debe ser Premium, rica en explicaciones integradas y con cuerpo narrativo. NO me des solo la lista muda.`;
 
 
             // UI Feedback — Skeleton Loading AAA
@@ -1696,6 +1808,13 @@ ${isCommander ? '- REGLA CRÍTICA EDH: Mazo de 100 cartas (1 Comandante + 99 car
             document.body.classList.add('cinema-mode-active');
             document.body.classList.add('instant-cinema');
             if (introVideo) introVideo.classList.add('active');
+
+            // Abrir Portal Obsidian con Video Fridge
+            if (aiLoadingModal) aiLoadingModal.classList.add('active');
+            if (loadingVideoFridge) {
+                loadingVideoFridge.currentTime = 0;
+                loadingVideoFridge.play().catch(e => console.warn("Error al reproducir video fridge:", e));
+            }
 
             btnAiGen.disabled = true;
             btnAiGen.style.opacity = '0.5';
@@ -1756,10 +1875,14 @@ ${isCommander ? '- REGLA CRÍTICA EDH: Mazo de 100 cartas (1 Comandante + 99 car
 
             } catch (err) {
                 console.error(err);
+                let errorMsg = err.message;
+                if (errorMsg.includes('429')) {
+                    errorMsg = "⚠️ EL MODELO ESTÁ SATURADO (Error 429). Este modelo gratuito ha recibido demasiadas peticiones. Por favor, selecciona otro modelo en el desplegable superior o espera un minuto.";
+                }
                 aiResults.innerHTML = `<div style="background: rgba(220, 38, 38, 0.2); border: 1px solid #ef4444; color: #f8fafc; padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem;">
                     <h3 style="color:#ef4444; margin-bottom: 0.5rem;">❌ Error en la IA (${provider.toUpperCase()})</h3>
                     <p style="margin-bottom: 1rem;">Copia el bloque de aquí abajo y pásaselo a la IA para averiguar qué falla:</p>
-                    <div style="background: rgba(0,0,0,0.6); padding: 1rem; border-radius: 4px; border: 1px dashed #ef4444; user-select: text; white-space: pre-wrap; font-family: monospace; font-size: 0.9rem; word-break: break-all;">${err.message}</div>
+                    <div style="background: rgba(0,0,0,0.6); padding: 1rem; border-radius: 4px; border: 1px dashed #ef4444; user-select: text; white-space: pre-wrap; font-family: monospace; font-size: 0.9rem; word-break: break-all;">${errorMsg}</div>
                 </div>`;
                 aiResults.style.display = 'block';
                 viewControls.style.display = 'none';
@@ -1779,6 +1902,10 @@ ${isCommander ? '- REGLA CRÍTICA EDH: Mazo de 100 cartas (1 Comandante + 99 car
 
                 btnAiGen.disabled = false;
                 btnAiGen.style.opacity = '1';
+
+                // Cerrar Portal Obsidian
+                if (aiLoadingModal) aiLoadingModal.classList.remove('active');
+                if (loadingVideoFridge) loadingVideoFridge.pause();
             }
         });
     }
@@ -2579,11 +2706,18 @@ Tu único objetivo es ser implacable, encontrar "Agujeros en el Meta" y evitar D
 ### DATOS DEL TRIBUNAL (Mazos a Auditar):
 ${contextoParaElJuez}
 
-### INSTRUCCIONES DEL JUICIO:
-1. **Auditoría de Dominancia**: ¿Existe algún mazo que parezca un "Tier 0" absoluto y vaya a arrasar a los demás rutinariamente?
-2. **Auditoría de Ineficacia**: ¿Hay algún mazo que es pura basura teórica en este ecosistema y se lo van a merendar siempre?
-3. **El Veredicto (Quirúrgico)**: Propón EXACTAMENTE de 3 a 5 cambios de cartas MUY ESPECÍFICOS para equilibrarlos.
-Haz tu respuesta limpia, estéticamente agradable e innegable.`;
+### ESTRUCTURA OBLIGATORIA DEL VEREDICTO:
+
+## ⚖️ AUDITORÍA DE EQUILIBRIO
+(Enumera aquí los problemas de poder encontrados por mazo o en el ecosistema general).
+
+## 📜 CONCLUSIÓN DEL TRIBUNAL
+(Un resumen final de la salud de la Battle Box).
+
+## 🛠️ MODIFICACIONES RECOMENDADAS
+(Propón de 3 a 5 cambios EXACTOS de cartas. Formato: Mazo X: [[Carta Antigua]] -> [[Carta Nueva]] para ajustar balance).
+
+Haz tu respuesta limpia, profesional e innegable. NO incluyas introducciones ni despedidas innecesarias fuera de estas tres secciones.`;
 
             judgeVerdict.innerHTML = '<div class="skeleton-line" style="width:80%"></div><div class="skeleton-line" style="width:60%"></div><div class="skeleton-line" style="width:90%"></div><div class="skeleton-line" style="width:55%"></div>';
             judgeVerdict.style.display = 'block';
@@ -2592,6 +2726,17 @@ Haz tu respuesta limpia, estéticamente agradable e innegable.`;
             judgeLoader.style.display = 'block';
             document.body.classList.add('cinema-mode-active');
             document.body.classList.add('instant-cinema');
+
+            // Abrir Portal Obsidian Tribunal
+            if (aiLoadingModal) {
+                document.getElementById('portal-status-text').textContent = "EL TRIBUNAL ESTÁ DELIBERANDO...";
+                aiLoadingModal.classList.add('active');
+            }
+            if (loadingVideoFridge) {
+                loadingVideoFridge.currentTime = 0;
+                loadingVideoFridge.play().catch(e => console.warn("Error al reproducir video fridge tribunal:", e));
+            }
+
             btnJudge.disabled = true;
 
             try {
@@ -2613,7 +2758,11 @@ Haz tu respuesta limpia, estéticamente agradable e innegable.`;
 
             } catch (err) {
                 console.error(err);
-                judgeVerdict.innerHTML = `<h3 style="color:#ef4444;">Error en la Invocación</h3><div style="background:rgba(0,0,0,0.6); padding:1rem; border:1px dashed #ef4444; border-radius:4px; font-family:monospace; word-break:break-all;">${err.message}</div>`;
+                let errorMsg = err.message;
+                if (errorMsg.includes('429')) {
+                    errorMsg = "⚠️ MODELO SATURADO (Error 429). El Tribunal está desbordado. Por favor, selecciona otro modelo en el desplegable superior.";
+                }
+                judgeVerdict.innerHTML = `<h3 style="color:#ef4444;">Error en la Invocación</h3><div style="background:rgba(0,0,0,0.6); padding:1rem; border:1px dashed #ef4444; border-radius:4px; font-family:monospace; word-break:break-all;">${errorMsg}</div>`;
                 judgeVerdict.style.display = 'block';
             } finally {
                 judgeLoader.style.display = 'none';
@@ -2621,6 +2770,17 @@ Haz tu respuesta limpia, estéticamente agradable e innegable.`;
                 document.body.classList.remove('cinema-mode-active');
                 document.body.classList.remove('instant-cinema');
                 btnJudge.disabled = false;
+
+                // Cerrar Portal Obsidian
+                if (aiLoadingModal) {
+                    aiLoadingModal.classList.remove('active');
+                    // Restaurar texto original para la próxima vez
+                    setTimeout(() => {
+                        document.getElementById('portal-status-text').textContent = "INVOCANDO LISTAS MATEMÁTICAMENTE...";
+                    }, 500);
+                }
+                if (loadingVideoFridge) loadingVideoFridge.pause();
+
                 setTimeout(() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }), 100);
             }
         });
