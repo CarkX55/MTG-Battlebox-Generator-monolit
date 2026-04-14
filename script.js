@@ -3062,6 +3062,27 @@ Haz tu respuesta limpia, profesional e innegable. NO incluyas introducciones ni 
         }
     });
 
+    // --- 🧹 SISTEMA DE MANTENIMIENTO: SELECTIVO O TOTAL ---
+    const btnResetBB = document.getElementById('btn-reset-bb');
+    const btnHardReset = document.getElementById('btn-hard-reset');
+
+    if (btnResetBB) {
+        btnResetBB.addEventListener('click', () => {
+            const confirmBB = confirm(
+                "📦 REINICIO DE BATTLE BOX\n\n" +
+                "Esto borrará SOLO los mazos que tienes actualmente en la lista de espera.\n" +
+                "Tus llaves API, el Archivo y el acceso al gremio permanecerán intactos.\n\n" +
+                "¿Deseas vaciar la Battle Box?"
+            );
+
+            if (confirmBB) {
+                console.log("🧹 Vaciando Battle Box...");
+                localStorage.removeItem('mtgBattleBox');
+                location.reload();
+            }
+        });
+    }
+
 });
 
 
