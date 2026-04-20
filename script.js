@@ -637,8 +637,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const scryfallCache = new Map();
     const tooltip = document.getElementById('mtg-tooltip');
     const tooltipImg = document.getElementById('mtg-tooltip-img');
+    const tooltipFlipHint = document.getElementById('mtg-tooltip-flip-hint');
     const aiLoadingModal = document.getElementById('ai-loading-modal');
     const loadingVideoFridge = document.getElementById('loading-video-fridge');
+
+    let currentHoveredCardData = null;
+    let showingBackFace = false;
 
     document.body.addEventListener('mouseover', async (e) => {
         const card = e.target.closest('.mtg-card');
@@ -647,16 +651,25 @@ document.addEventListener('DOMContentLoaded', () => {
         const cardName = card.getAttribute('data-card');
         if (!cardName) return;
 
+        showingBackFace = false;
         tooltip.style.display = 'block';
         tooltip.style.opacity = "0";
         setTimeout(() => tooltip.style.opacity = "1", 50);
 
         if (scryfallCache.has(cardName)) {
-            tooltipImg.src = scryfallCache.get(cardName);
+            const data = scryfallCache.get(cardName);
+            currentHoveredCardData = data;
+            tooltipImg.src = data.front;
+            if (data.back && tooltipFlipHint) {
+                tooltipFlipHint.style.display = 'block';
+            } else if (tooltipFlipHint) {
+                tooltipFlipHint.style.display = 'none';
+            }
             return;
         }
 
         tooltipImg.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
+        if (tooltipFlipHint) tooltipFlipHint.style.display = 'none';
 
         try {
             const res = await fetch(`https://api.scryfall.com/cards/named?exact=${encodeURIComponent(cardName)}`);
@@ -669,19 +682,43 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             if (cardData) {
-                let imgUrl = "";
+                let imgFront = "";
+                let imgBack = "";
                 if (cardData.image_uris && cardData.image_uris.normal) {
-                    imgUrl = cardData.image_uris.normal;
+                    imgFront = cardData.image_uris.normal;
                 } else if (cardData.card_faces && cardData.card_faces[0].image_uris) {
-                    imgUrl = cardData.card_faces[0].image_uris.normal;
+                    imgFront = cardData.card_faces[0].image_uris.normal;
+                    if (cardData.card_faces[1] && cardData.card_faces[1].image_uris) {
+                        imgBack = cardData.card_faces[1].image_uris.normal;
+                    }
                 }
-                if (imgUrl) {
-                    scryfallCache.set(cardName, imgUrl);
-                    tooltipImg.src = imgUrl;
+                
+                if (imgFront) {
+                    const cacheData = { front: imgFront, back: imgBack };
+                    scryfallCache.set(cardName, cacheData);
+                    
+                    // Solo actualizar si el usuario sigue en la ventana de esta carta
+                    if (card.matches(':hover')) {
+                        currentHoveredCardData = cacheData;
+                        tooltipImg.src = imgFront;
+                        if (imgBack && tooltipFlipHint) {
+                            tooltipFlipHint.style.display = 'block';
+                        }
+                    }
                 }
             }
         } catch(err) {
             console.log("No se pudo obtener imagen de la carta", cardName);
+        }
+    });
+
+    document.body.addEventListener('click', (e) => {
+        const card = e.target.closest('.mtg-card');
+        if (!card) return;
+        
+        if (currentHoveredCardData && currentHoveredCardData.back) {
+            showingBackFace = !showingBackFace;
+            tooltipImg.src = showingBackFace ? currentHoveredCardData.back : currentHoveredCardData.front;
         }
     });
 
@@ -709,6 +746,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.target.closest('.mtg-card')) {
             tooltip.style.display = 'none';
             tooltipImg.src = '';
+            if (tooltipFlipHint) tooltipFlipHint.style.display = 'none';
+            currentHoveredCardData = null;
+            showingBackFace = false;
         }
     });
 
